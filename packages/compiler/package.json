@@ -1,15 +1,29 @@
 {
   "name": "@softpy/compiler",
   "version": "0.0.1",
+  "description": "A minimal CLI to run .spy files",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
     "softpy": "dist/cli/index.js"
   },
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Pankaj3112/softpy"
+  },
+  "homepage": "https://github.com/Pankaj3112/softpy#readme",
+  "bugs": {
+    "url": "https://github.com/Pankaj3112/softpy/issues"
+  },
   "scripts": {
-    "dev": "tsc -w",
+    "dev": "ts-node ./cli/index.ts",
     "build": "tsc"
   },
+  "author": "Pankaj Beniwal",
+  "license": "MIT",
   "devDependencies": {
     "@types/node": "^24.10.1",
     "typescript": "^5.9.3"

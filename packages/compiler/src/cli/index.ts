@@ -5,6 +5,7 @@ import { Lexer } from "../lexer/lexer";
 import { Parser } from "../parser/parser";
 import { Token, TokenType } from "../lexer/token";
 import { CodeGenerator } from "../codegen/codegen";
+const isDev = process.env.SOFTPY_DEV === "true";
 
 const args = process.argv.slice(2);
 const fileName = args[0];
@@ -23,6 +24,7 @@ if (!fs.existsSync(filePath)) {
 
 // ---- Helper Functions ----
 function logToFile(filename: string, content: string) {
+  if (!isDev) return;
   const logDir = path.resolve(process.cwd(), "logs");
   if (!fs.existsSync(logDir)) {
     fs.mkdirSync(logDir);
@@ -60,6 +62,5 @@ const outputJS = generator.generate(ast);
 
 logToFile("output.js", outputJS);
 
-// Optionally, run it immediately
-console.log("\n=== Output of running JS ===");
+// Run it immediately
 eval(outputJS);
