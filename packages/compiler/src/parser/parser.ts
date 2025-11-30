@@ -68,7 +68,7 @@ export class Parser {
       return this.parseExpressionStatement();
     }
 
-    if (token.type === TokenType.STRING) {
+    if (token.type === TokenType.STRING || token.type === TokenType.NUMBER) {
       return this.parseExpressionStatement();
     }
 
