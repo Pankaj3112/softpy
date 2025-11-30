@@ -1,4 +1,3 @@
-/* eslint-disable quotes */
 import { Token, TokenType } from "./token";
 
 export class Lexer {
