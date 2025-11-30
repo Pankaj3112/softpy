@@ -9,7 +9,7 @@
     // See also https://aka.ms/tsconfig/module
     "module": "commonjs",
     "target": "es2019",
-    "types": ["node"],
+    "types": ["node", "jest"],
     // For nodejs:
     // "lib": ["esnext"],
     // "types": ["node"],
@@ -42,5 +42,6 @@
     "skipLibCheck": true,
     "esModuleInterop": true
   },
-  "include": ["src"]
+  // "include": ["src"]
+  "include": ["src/**/*.ts", "tests/**/*.test.ts"]
 }
