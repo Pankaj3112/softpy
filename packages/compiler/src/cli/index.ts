@@ -23,8 +23,13 @@ if (!fs.existsSync(filePath)) {
 
 // ---- Helper Functions ----
 function logToFile(filename: string, content: string) {
-  fs.writeFileSync(filename, content, { encoding: "utf-8" });
-  console.log(`Output written to ${filename}`);
+  const logDir = path.resolve(process.cwd(), "logs");
+  if (!fs.existsSync(logDir)) {
+    fs.mkdirSync(logDir);
+  }
+  const fullPath = path.join(logDir, filename);
+  fs.writeFileSync(fullPath, content, { encoding: "utf-8" });
+  console.log(`Output written to ${fullPath}`);
 }
 
 // --- Read file ---
@@ -53,8 +58,7 @@ logToFile("ast.json", JSON.stringify(ast, null, 2));
 const generator = new CodeGenerator();
 const outputJS = generator.generate(ast);
 
-fs.writeFileSync("output.js", outputJS, "utf-8");
-console.log("Generated JS written to output.js");
+logToFile("output.js", outputJS);
 
 // Optionally, run it immediately
 console.log("\n=== Output of running JS ===");
