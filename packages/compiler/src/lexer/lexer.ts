@@ -1,3 +1,4 @@
+/* eslint-disable quotes */
 import { Token, TokenType } from "./token";
 
 export class Lexer {
@@ -39,6 +40,11 @@ export class Lexer {
       };
     }
 
+    // String literal
+    if (char === '"') {
+      return this.string();
+    }
+
     // Numbers
     if (/\d/.test(char)) {
       return this.number();
@@ -49,18 +55,7 @@ export class Lexer {
       return this.identifier();
     }
 
-    // Operators (for now just +, -, =)
-    // if (/[=+\-*/]/.test(char)) {
-    //   this.advance();
-    //   return {
-    //     type: TokenType.OPERATOR,
-    //     value: char,
-    //     line: this.line,
-    //     column: this.column,
-    //   };
-    // }
-
-    if (/[=+\-*/()]/.test(char)) {
+    if (/[=+\-*/(),]/.test(char)) {
       const startCol = this.column;
       this.advance();
       return {
@@ -84,6 +79,28 @@ export class Lexer {
       this.column++;
     }
     this.pos++;
+  }
+
+  private string(): Token {
+    let result = "";
+    const startCol = this.column;
+    this.advance(); // Skip opening quote
+    while (this.pos < this.input.length && this.input[this.pos] !== '"') {
+      result += this.input[this.pos];
+      this.advance();
+    }
+    if (this.pos >= this.input.length) {
+      throw new Error(
+        `Unterminated string at line ${this.line}, column ${startCol}`,
+      );
+    }
+    this.advance(); // Skip closing quote
+    return {
+      type: TokenType.STRING,
+      value: result,
+      line: this.line,
+      column: startCol,
+    };
   }
 
   private number(): Token {

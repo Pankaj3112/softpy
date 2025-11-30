@@ -56,22 +56,54 @@ export class Parser {
     const token = this.current();
 
     if (token.type === TokenType.IDENTIFIER) {
-      // Peek next token to see if it's an assignment
+      if (token.value === "print") {
+        return this.parsePrintStatement();
+      }
+
       const next = this.tokens[this.pos + 1];
       if (next && next.type === TokenType.OPERATOR && next.value === "=") {
         return this.parseAssignment();
-      } else {
-        return this.parseExpressionStatement();
       }
+
+      return this.parseExpressionStatement();
     }
 
-    // Skip newlines
+    if (token.type === TokenType.STRING) {
+      return this.parseExpressionStatement();
+    }
+
     if (token.type === TokenType.NEWLINE) {
       this.pos++;
       return null;
     }
 
     throw new Error(`Unexpected token: ${token.type} at line ${token.line}`);
+  }
+
+  private parsePrintStatement(): ExpressionStatement {
+    this.eat(TokenType.IDENTIFIER);
+
+    const args: Expression[] = [];
+
+    while (!this.match(TokenType.NEWLINE) && !this.match(TokenType.EOF)) {
+      args.push(this.parseExpression());
+
+      if (this.match(TokenType.OPERATOR) && this.current().value === ",") {
+        this.eat(TokenType.OPERATOR);
+      } else {
+        break;
+      }
+    }
+
+    if (this.match(TokenType.NEWLINE)) this.eat(TokenType.NEWLINE);
+
+    const callExpr: CallExpression = {
+      type: "CallExpression",
+      callee: { type: "Identifier", name: "print" },
+      args,
+    };
+
+    return { type: "ExpressionStatement", expression: callExpr };
   }
 
   private parseAssignment(): Assignment {
@@ -103,6 +135,9 @@ export class Parser {
     const token = this.current();
     if (token.type === TokenType.NUMBER) {
       left = { type: "NumberLiteral", value: token.value };
+      this.pos++;
+    } else if (token.type === TokenType.STRING) {
+      left = { type: "StringLiteral", value: token.value };
       this.pos++;
     } else if (token.type === TokenType.IDENTIFIER) {
       left = { type: "Identifier", name: token.value };

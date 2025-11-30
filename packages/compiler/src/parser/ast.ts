@@ -1,11 +1,17 @@
 export type Expression =
   | NumberLiteral
+  | StringLiteral
   | Identifier
   | BinaryExpression
   | CallExpression;
 
 export interface NumberLiteral {
   type: "NumberLiteral";
+  value: string;
+}
+
+export interface StringLiteral {
+  type: "StringLiteral";
   value: string;
 }
 

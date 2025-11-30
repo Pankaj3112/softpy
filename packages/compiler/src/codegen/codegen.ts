@@ -31,6 +31,8 @@ export class CodeGenerator {
     switch (expr.type) {
       case "NumberLiteral":
         return expr.value;
+      case "StringLiteral":
+        return `"${expr.value}"`;
       case "Identifier":
         return expr.name;
       case "BinaryExpression":
