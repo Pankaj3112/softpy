@@ -1,6 +1,6 @@
 # Softpy Compiler
 
-Softpy is a minimal CLI for running `.spy` files.
+Softpy is a Python-inspired language that compiles to JavaScript.
 
 ## Installation
 
@@ -8,7 +8,7 @@ You can install Softpy globally:
 
 ```bash
 npm install -g @softpy/compiler
-````
+```
 
 Or use it locally in a project:
 
@@ -23,12 +23,22 @@ npx softpy example.spy
 
 Create a `.spy` file with your code. For example, `example.spy`:
 
-```text
+```spy
+# Variables and arithmetic
 x = 10
 y = 5
-z = x + y
+z = x + y * 2
 
+# Boolean logic
+isValid = True and not False
+result = x > 5 or y < 3
+
+# Print statement (comma-separated)
+print "Result:", z
 print x, "+", y, "=", z
+
+# Function calls
+print(x, y, z)
 ```
 
 Run it with:
@@ -37,21 +47,107 @@ Run it with:
 softpy example.spy
 ```
 
-Output:
+---
 
+## Language Features
+
+### Data Types
+
+- **Numbers**: `42`, `123`
+- **Strings**: `"Hello, World!"`
+- **Booleans**: `True`, `False`
+
+### Variables
+
+```spy
+name = "Softpy"
+version = 1
+isActive = True
 ```
-10 + 5 = 15
+
+### Operators
+
+**Arithmetic Operators:**
+
+- Addition: `+`
+- Subtraction: `-`
+- Multiplication: `*`
+- Division: `/`
+- Modulo: `%`
+
+```spy
+result = 10 + 5 * 2  # Respects operator precedence
+```
+
+**Logical Operators:**
+
+- AND: `and`
+- OR: `or`
+- NOT: `not`
+
+```spy
+x = True and False
+y = not x or True
+```
+
+### Expressions
+
+- **Parenthesized expressions** for grouping: `(x + y) * z`
+- **Operator precedence**: Follows standard mathematical rules
+- **Unary expressions**: `not isValid`
+
+### Statements
+
+**Print Statement:**
+
+```spy
+# Comma-separated values
+print x, y, z
+
+# Note: print(x, y) syntax not yet supported
+```
+
+**Function Calls:**
+
+```spy
+# Generic function call syntax
+myFunc(arg1, arg2)
+```
+
+### Comments
+
+```spy
+# This is a single-line comment
+x = 10  # Comments can be inline
 ```
 
 ---
 
-## Supported Features (v0.0.1)
+## Compilation
 
-* Variable assignment: `x = 10`
-* Arithmetic operations: `+`, `-`, `*`, `/`
-* Printing output: `print x, "+", y, "=", z`
+Softpy compiles to JavaScript:
 
-> Only the above syntax is supported in this version. More features coming soon!
+```spy
+x = True and not False
+print x
+```
+
+Compiles to:
+
+```javascript
+let x = true && !false;
+console.log(x);
+```
+
+---
+
+## Coming Soon
+
+- Comparison operators: `==`, `!=`, `<`, `>`, `<=`, `>=`
+- Control flow: `if`, `else`, `while`, `for`
+- Functions: `func myFunc(x, y)`
+- Lists and dictionaries
+- More built-in functions
 
 ---
 

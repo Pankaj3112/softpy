@@ -1,3 +1,1 @@
-x = True and False
-y = not x
-print x, y
+print(1,2)
