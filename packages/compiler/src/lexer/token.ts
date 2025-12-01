@@ -1,6 +1,7 @@
 export enum TokenType {
   NUMBER = "NUMBER",
   STRING = "STRING",
+  COMMENT = "COMMENT",
   IDENTIFIER = "IDENTIFIER",
   OPERATOR = "OPERATOR",
   NEWLINE = "NEWLINE",

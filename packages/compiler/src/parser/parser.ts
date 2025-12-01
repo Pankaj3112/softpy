@@ -54,6 +54,13 @@ export class Parser {
     while (this.match(TokenType.NEWLINE)) this.pos++;
   }
 
+  private skipComments() {
+    while (this.match(TokenType.COMMENT)) {
+      this.pos++;
+      this.skipNewlines();
+    }
+  }
+
   // ------------------ Entry Point ------------------
   public parse(): Program {
     const body: Statement[] = [];
@@ -67,6 +74,8 @@ export class Parser {
   // ------------------ Statement Parsing ------------------
   private parseStatement(): Statement | null {
     this.skipNewlines();
+    this.skipComments();
+
     const token = this.current();
 
     if (token.type === TokenType.IDENTIFIER) {

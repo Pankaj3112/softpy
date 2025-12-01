@@ -22,6 +22,7 @@ export class Lexer {
 
     if (char === "\n") return this.newlineToken();
     if (char === '"') return this.stringToken();
+    if (char === "#") return this.commentToken();
     if (this.isDigit(char)) return this.numberToken();
     if (this.isIdentifierStart(char)) return this.identifierToken();
     if (this.isOperatorChar(char)) return this.operatorToken();
@@ -117,6 +118,19 @@ export class Lexer {
 
     this.advance(); // skip closing quote
     return this.createToken(TokenType.STRING, result, startCol);
+  }
+
+  private commentToken(): Token {
+    const startCol = this.column;
+    let result = "";
+    this.advance(); // skip '#'
+
+    while (!this.isEOF() && this.currentChar() !== "\n") {
+      result += this.currentChar();
+      this.advance();
+    }
+
+    return this.createToken(TokenType.COMMENT, result, startCol);
   }
 
   private numberToken(): Token {
