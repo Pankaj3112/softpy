@@ -10,6 +10,7 @@ import {
   BinaryExpression,
   CallExpression,
   BooleanLiteral,
+  UnaryExpression,
 } from "../parser/ast";
 
 export class CodeGenerator {
@@ -56,6 +57,8 @@ export class CodeGenerator {
         return this.generateBinaryExpression(expr);
       case "CallExpression":
         return this.generateCallExpression(expr);
+      case "UnaryExpression":
+        return this.generateUnaryExpression(expr);
       default:
         return this.unreachable(expr);
     }
@@ -80,6 +83,14 @@ export class CodeGenerator {
   private generateBinaryExpression(node: BinaryExpression): string {
     const left = this.generateExpression(node.left);
     const right = this.generateExpression(node.right);
+
+    if (node.operator === "and") {
+      return `${left} && ${right}`;
+    }
+    if (node.operator === "or") {
+      return `${left} || ${right}`;
+    }
+
     return `${left} ${node.operator} ${right}`;
   }
 
@@ -96,6 +107,16 @@ export class CodeGenerator {
     }
 
     return `${node.callee.name}(${args})`;
+  }
+
+  private generateUnaryExpression(node: UnaryExpression): string {
+    const argument = this.generateExpression(node.argument);
+    switch (node.operator) {
+      case "NOT":
+        return `!${argument}`;
+      default:
+        throw new Error(`Unsupported unary operator: ${node.operator}`);
+    }
   }
 
   // ------------------ Utility ------------------

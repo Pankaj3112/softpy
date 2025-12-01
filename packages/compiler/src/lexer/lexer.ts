@@ -6,6 +6,13 @@ export class Lexer {
   private line = 1;
   private column = 1;
 
+  private keywords: Record<string, TokenType> = {
+    and: TokenType.AND,
+    or: TokenType.OR,
+    not: TokenType.NOT,
+    // add more here
+  };
+
   constructor(input: string) {
     this.input = input;
   }
@@ -13,10 +20,7 @@ export class Lexer {
   // ------------------ Public Method ------------------
   public getNextToken(): Token {
     this.skipWhitespace();
-
-    if (this.isEOF()) {
-      return this.createToken(TokenType.EOF, "");
-    }
+    if (this.isEOF()) return this.createToken(TokenType.EOF, "");
 
     const char = this.currentChar();
 
@@ -25,9 +29,7 @@ export class Lexer {
     if (char === "#") return this.commentToken();
     if (this.isDigit(char)) return this.numberToken();
     if (this.isBooleanStart(char)) return this.booleanToken();
-    if (this.isIdentifierStart(char)) return this.identifierToken();
-
-    // Operators / punctuation
+    if (this.isIdentifierStart(char)) return this.identifierOrKeywordToken();
     if (this.isOperatorChar(char)) return this.operatorToken();
 
     throw new Error(
@@ -171,7 +173,7 @@ export class Lexer {
     return this.createToken(TokenType.BOOLEAN, result, startCol);
   }
 
-  private identifierToken(): Token {
+  private identifierOrKeywordToken(): Token {
     const startCol = this.column;
     let result = "";
 
@@ -180,7 +182,8 @@ export class Lexer {
       this.advance();
     }
 
-    return this.createToken(TokenType.IDENTIFIER, result, startCol);
+    const type = this.keywords[result] ?? TokenType.IDENTIFIER;
+    return this.createToken(type, result, startCol);
   }
 
   // -------- Operator Lexer (updated for new TokenTypes) --------

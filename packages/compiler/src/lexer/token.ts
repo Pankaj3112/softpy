@@ -24,6 +24,11 @@ export enum TokenType {
   LTE,
   GTE, // <= >=
 
+  // Logical Operators
+  AND, // and
+  OR, // or
+  NOT, // not
+
   // Punctuation / delimiters
   LPAREN,
   RPAREN,

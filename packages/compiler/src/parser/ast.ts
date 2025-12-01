@@ -4,7 +4,8 @@ export type Expression =
   | BooleanLiteral
   | Identifier
   | BinaryExpression
-  | CallExpression;
+  | CallExpression
+  | UnaryExpression;
 
 export interface NumberLiteral {
   type: "NumberLiteral";
@@ -37,6 +38,12 @@ export interface CallExpression {
   type: "CallExpression";
   callee: Identifier;
   args: Expression[];
+}
+
+export interface UnaryExpression {
+  type: "UnaryExpression";
+  operator: string;
+  argument: Expression;
 }
 
 export type Statement = Assignment | ExpressionStatement;

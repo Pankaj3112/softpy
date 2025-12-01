@@ -87,8 +87,18 @@ export class Parser {
       return this.parseExpressionStatement();
     }
 
-    if (t.type === TokenType.NUMBER || t.type === TokenType.STRING)
+    if (
+      [
+        TokenType.NUMBER,
+        TokenType.STRING,
+        TokenType.BOOLEAN,
+        TokenType.LPAREN,
+        TokenType.NOT,
+        TokenType.IDENTIFIER,
+      ].includes(t.type)
+    ) {
       return this.parseExpressionStatement();
+    }
 
     if (t.type === TokenType.NEWLINE) {
       this.pos++;
@@ -152,6 +162,12 @@ export class Parser {
       case TokenType.SLASH:
       case TokenType.MOD:
         return 20;
+      case TokenType.NOT:
+        return 30; // unary NOT
+      case TokenType.AND:
+        return 5;
+      case TokenType.OR:
+        return 4;
       default:
         return 0;
     }
@@ -162,22 +178,25 @@ export class Parser {
     switch (t.type) {
       case TokenType.NUMBER:
         return { type: "NumberLiteral", value: t.value };
-
       case TokenType.STRING:
         return { type: "StringLiteral", value: t.value };
-
       case TokenType.BOOLEAN:
         return { type: "BooleanLiteral", value: t.value };
-
       case TokenType.IDENTIFIER:
         return { type: "Identifier", name: t.value };
-
       case TokenType.LPAREN: {
         const expr = this.parseExpression(0);
         this.eat(TokenType.RPAREN);
         return expr;
       }
-
+      case TokenType.NOT: {
+        const right = this.parseExpression(this.lbp(TokenType.NOT));
+        return {
+          type: "UnaryExpression",
+          operator: "NOT",
+          argument: right,
+        };
+      }
       default:
         throw new Error("Unexpected token in prefix: " + t.type);
     }
@@ -190,7 +209,9 @@ export class Parser {
       case TokenType.MINUS:
       case TokenType.STAR:
       case TokenType.SLASH:
-      case TokenType.MOD: {
+      case TokenType.MOD:
+      case TokenType.AND:
+      case TokenType.OR: {
         const right = this.parseExpression(this.lbp(t.type));
         return {
           type: "BinaryExpression",
@@ -199,7 +220,6 @@ export class Parser {
           right,
         };
       }
-
       case TokenType.LPAREN: {
         // function call
         const args: Expression[] = [];
@@ -215,7 +235,6 @@ export class Parser {
           args,
         };
       }
-
       default:
         throw new Error("Unexpected infix token: " + t.type);
     }
