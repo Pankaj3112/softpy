@@ -24,7 +24,7 @@ describe("Lexer", () => {
     }
     expect(tokens).toEqual([
       { type: TokenType.IDENTIFIER, value: "x", line: 1, column: 1 },
-      { type: TokenType.OPERATOR, value: "=", line: 1, column: 3 },
+      { type: TokenType.ASSIGN, value: "=", line: 1, column: 3 },
       { type: TokenType.IDENTIFIER, value: "y", line: 1, column: 5 },
     ]);
   });

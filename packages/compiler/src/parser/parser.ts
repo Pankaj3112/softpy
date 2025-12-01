@@ -1,4 +1,3 @@
-import { Token, TokenType } from "../lexer/token";
 import {
   Program,
   Statement,
@@ -11,6 +10,7 @@ import {
   BinaryExpression,
   CallExpression,
 } from "./ast";
+import { Token, TokenType } from "../lexer/token";
 
 export class Parser {
   private tokens: Token[];
@@ -20,16 +20,16 @@ export class Parser {
     this.tokens = tokens;
   }
 
-  // ------------------ Helper Methods ------------------
   private current(): Token {
     const token = this.tokens[this.pos];
-    if (!token)
+    if (!token) {
       throw new Error(`Unexpected end of input at position ${this.pos}`);
+    }
     return token;
   }
 
   private peek(offset = 1): Token | null {
-    return this.tokens[this.pos + offset] || null;
+    return this.tokens[this.pos + offset] ?? null;
   }
 
   private eat(type: TokenType, value?: string): Token {
@@ -45,8 +45,9 @@ export class Parser {
 
   private match(type: TokenType, value?: string): boolean {
     const token = this.current();
-    if (value !== undefined)
+    if (value !== undefined) {
       return token.type === type && token.value === value;
+    }
     return token.type === type;
   }
 
@@ -61,7 +62,7 @@ export class Parser {
     }
   }
 
-  // ------------------ Entry Point ------------------
+  // ------------------ Program ------------------
   public parse(): Program {
     const body: Statement[] = [];
     while (!this.match(TokenType.EOF)) {
@@ -71,7 +72,7 @@ export class Parser {
     return { type: "Program", body };
   }
 
-  // ------------------ Statement Parsing ------------------
+  // ------------------ Statements ------------------
   private parseStatement(): Statement | null {
     this.skipNewlines();
     this.skipComments();
@@ -79,17 +80,19 @@ export class Parser {
     const token = this.current();
 
     if (token.type === TokenType.IDENTIFIER) {
-      if (token.value === "print") return this.parsePrintStatement();
+      if (token.value === "print") {
+        return this.parsePrintStatement();
+      }
 
       const next = this.peek();
-      if (next && next.type === TokenType.OPERATOR && next.value === "=") {
+      if (next && next.type === TokenType.ASSIGN) {
         return this.parseAssignment();
       }
 
       return this.parseExpressionStatement();
     }
 
-    if ([TokenType.NUMBER, TokenType.STRING].includes(token.type)) {
+    if (token.type === TokenType.NUMBER || token.type === TokenType.STRING) {
       return this.parseExpressionStatement();
     }
 
@@ -103,13 +106,15 @@ export class Parser {
 
   private parsePrintStatement(): ExpressionStatement {
     this.eat(TokenType.IDENTIFIER, "print");
+
     const args: Expression[] = [];
 
     while (!this.match(TokenType.NEWLINE) && !this.match(TokenType.EOF)) {
       args.push(this.parseExpression());
-      if (this.match(TokenType.OPERATOR, ","))
-        this.eat(TokenType.OPERATOR, ",");
-      else break;
+
+      if (this.match(TokenType.COMMA)) {
+        this.eat(TokenType.COMMA);
+      } else break;
     }
 
     this.skipNewlines();
@@ -127,9 +132,12 @@ export class Parser {
   private parseAssignment(): Assignment {
     const leftToken = this.eat(TokenType.IDENTIFIER);
     const left: Identifier = { type: "Identifier", name: leftToken.value };
-    this.eat(TokenType.OPERATOR, "=");
+
+    this.eat(TokenType.ASSIGN);
     const right = this.parseExpression();
+
     this.skipNewlines();
+
     return { type: "Assignment", left, right };
   }
 
@@ -139,17 +147,20 @@ export class Parser {
     return { type: "ExpressionStatement", expression: expr };
   }
 
-  // ------------------ Expression Parsing ------------------
+  // ------------------ Expressions ------------------
   private parseExpression(): Expression {
     let left = this.parsePrimary();
 
-    // handle simple binary expressions (without precedence)
     if (
-      this.match(TokenType.OPERATOR) &&
-      ["+", "-", "*", "/", "%"].includes(this.current().value)
+      this.match(TokenType.PLUS) ||
+      this.match(TokenType.MINUS) ||
+      this.match(TokenType.STAR) ||
+      this.match(TokenType.SLASH) ||
+      this.match(TokenType.MOD)
     ) {
       const operator = this.current().value;
       this.pos++;
+
       const right = this.parseExpression();
       left = { type: "BinaryExpression", left, operator, right };
     }
@@ -172,20 +183,29 @@ export class Parser {
 
     if (token.type === TokenType.IDENTIFIER) {
       this.pos++;
-      let expr: Expression = { type: "Identifier", name: token.value };
+      let expr: Expression = {
+        type: "Identifier",
+        name: token.value,
+      };
 
-      // function call
-      if (this.match(TokenType.OPERATOR, "(")) {
-        this.eat(TokenType.OPERATOR, "(");
+      // Function call
+      if (this.match(TokenType.LPAREN)) {
+        this.eat(TokenType.LPAREN);
         const args: Expression[] = [];
-        while (!this.match(TokenType.OPERATOR, ")")) {
+
+        while (!this.match(TokenType.RPAREN)) {
           args.push(this.parseExpression());
-          if (this.match(TokenType.OPERATOR, ","))
-            this.eat(TokenType.OPERATOR, ",");
+          if (this.match(TokenType.COMMA)) this.eat(TokenType.COMMA);
           else break;
         }
-        this.eat(TokenType.OPERATOR, ")");
-        expr = { type: "CallExpression", callee: expr as Identifier, args };
+
+        this.eat(TokenType.RPAREN);
+
+        expr = {
+          type: "CallExpression",
+          callee: expr as Identifier,
+          args,
+        };
       }
 
       return expr;

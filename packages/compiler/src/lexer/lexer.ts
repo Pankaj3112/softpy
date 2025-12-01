@@ -25,6 +25,8 @@ export class Lexer {
     if (char === "#") return this.commentToken();
     if (this.isDigit(char)) return this.numberToken();
     if (this.isIdentifierStart(char)) return this.identifierToken();
+
+    // Operators / punctuation
     if (this.isOperatorChar(char)) return this.operatorToken();
 
     throw new Error(
@@ -68,7 +70,7 @@ export class Lexer {
   }
 
   private isOperatorChar(char: string): boolean {
-    return /[=+\-*/(),%]/.test(char);
+    return /[=+\-*/(),%<>]/.test(char);
   }
 
   private skipWhitespace() {
@@ -157,10 +159,63 @@ export class Lexer {
     return this.createToken(TokenType.IDENTIFIER, result, startCol);
   }
 
+  // -------- Operator Lexer (updated for new TokenTypes) --------
   private operatorToken(): Token {
     const startCol = this.column;
     const char = this.currentChar();
+    const next = this.peekChar();
+
+    // Multi-char operators
+    if (char === "=" && next === "=") {
+      this.advance();
+      this.advance();
+      return this.createToken(TokenType.EQUAL, "==", startCol);
+    }
+    if (char === "!" && next === "=") {
+      this.advance();
+      this.advance();
+      return this.createToken(TokenType.NOT_EQUAL, "!=", startCol);
+    }
+    if (char === "<" && next === "=") {
+      this.advance();
+      this.advance();
+      return this.createToken(TokenType.LTE, "<=", startCol);
+    }
+    if (char === ">" && next === "=") {
+      this.advance();
+      this.advance();
+      return this.createToken(TokenType.GTE, ">=", startCol);
+    }
+
+    // Single-char operators & punctuation
     this.advance();
-    return this.createToken(TokenType.OPERATOR, char, startCol);
+    switch (char) {
+      case "+":
+        return this.createToken(TokenType.PLUS, "+", startCol);
+      case "-":
+        return this.createToken(TokenType.MINUS, "-", startCol);
+      case "*":
+        return this.createToken(TokenType.STAR, "*", startCol);
+      case "/":
+        return this.createToken(TokenType.SLASH, "/", startCol);
+      case "%":
+        return this.createToken(TokenType.MOD, "%", startCol);
+      case "=":
+        return this.createToken(TokenType.ASSIGN, "=", startCol);
+      case "(":
+        return this.createToken(TokenType.LPAREN, "(", startCol);
+      case ")":
+        return this.createToken(TokenType.RPAREN, ")", startCol);
+      case ",":
+        return this.createToken(TokenType.COMMA, ",", startCol);
+      case "<":
+        return this.createToken(TokenType.LT, "<", startCol);
+      case ">":
+        return this.createToken(TokenType.GT, ">", startCol);
+    }
+
+    throw new Error(
+      `Unknown operator ${char} at line ${this.line}, column ${startCol}`,
+    );
   }
 }
