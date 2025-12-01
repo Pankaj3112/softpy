@@ -31,7 +31,7 @@ z = x + y * 2
 
 # Boolean logic
 isValid = True and not False
-result = x > 5 or y < 3
+hasValue = True or False
 
 # Print statement (comma-separated)
 print "Result:", z
@@ -145,7 +145,7 @@ console.log(x);
 
 - Comparison operators: `==`, `!=`, `<`, `>`, `<=`, `>=`
 - Control flow: `if`, `else`, `while`, `for`
-- Functions: `func myFunc(x, y)`
+- Function definitions: `func myFunc(x, y)`
 - Lists and dictionaries
 - More built-in functions
 
