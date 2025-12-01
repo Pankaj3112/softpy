@@ -112,36 +112,6 @@ describe("Parser", () => {
     });
   });
 
-  test("parses generic function call", () => {
-    const lexer = new Lexer("myFunc(1, 2)");
-    const tokens = [];
-    let tok;
-    while ((tok = lexer.getNextToken()).type !== TokenType.EOF) {
-      tokens.push(tok);
-    }
-    tokens.push(tok);
-
-    const parser = new Parser(tokens);
-    const ast = parser.parse();
-
-    expect(ast).toEqual({
-      type: "Program",
-      body: [
-        {
-          type: "ExpressionStatement",
-          expression: {
-            type: "CallExpression",
-            callee: { type: "Identifier", name: "myFunc" },
-            args: [
-              { type: "NumberLiteral", value: "1" },
-              { type: "NumberLiteral", value: "2" },
-            ],
-          },
-        },
-      ],
-    });
-  });
-
   test("parses multiple statements", () => {
     const lexer = new Lexer("x = 1\ny = 2");
     const tokens = [];

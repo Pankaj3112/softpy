@@ -21,11 +21,15 @@ export class Parser {
   }
 
   private current(): Token {
-    const token = this.tokens[this.pos];
-    if (!token) {
-      throw new Error(`Unexpected end of input at position ${this.pos}`);
-    }
-    return token;
+    const t = this.tokens[this.pos];
+    if (!t) throw new Error("Unexpected end of input");
+    return t;
+  }
+
+  private next(): Token {
+    const t = this.tokens[this.pos++];
+    if (!t) throw new Error("Unexpected end of input");
+    return t;
   }
 
   private peek(offset = 1): Token | null {
@@ -33,22 +37,28 @@ export class Parser {
   }
 
   private eat(type: TokenType, value?: string): Token {
-    const token = this.current();
-    if (token.type !== type || (value !== undefined && token.value !== value)) {
+    const t = this.current();
+    if (t.type !== type || (value !== undefined && t.value !== value)) {
       throw new Error(
-        `Unexpected token: expected ${type}${value ? `(${value})` : ""}, got ${token.type}(${token.value}) at line ${token.line}`,
+        `Expected ${type}${value ? `(${value})` : ""}, got ${t.type}(${t.value})`,
       );
     }
     this.pos++;
-    return token;
+    return t;
   }
 
-  private match(type: TokenType, value?: string): boolean {
-    const token = this.current();
-    if (value !== undefined) {
-      return token.type === type && token.value === value;
+  private match(type: TokenType): boolean {
+    return this.current().type === type;
+  }
+
+  // ---------------- Program ----------------
+  public parse(): Program {
+    const body: Statement[] = [];
+    while (!this.match(TokenType.EOF)) {
+      const stmt = this.parseStatement();
+      if (stmt) body.push(stmt);
     }
-    return token.type === type;
+    return { type: "Program", body };
   }
 
   private skipNewlines() {
@@ -62,59 +72,40 @@ export class Parser {
     }
   }
 
-  // ------------------ Program ------------------
-  public parse(): Program {
-    const body: Statement[] = [];
-    while (!this.match(TokenType.EOF)) {
-      const stmt = this.parseStatement();
-      if (stmt) body.push(stmt);
-    }
-    return { type: "Program", body };
-  }
-
-  // ------------------ Statements ------------------
+  // ---------------- Statements ----------------
   private parseStatement(): Statement | null {
     this.skipNewlines();
     this.skipComments();
+    const t = this.current();
 
-    const token = this.current();
-
-    if (token.type === TokenType.IDENTIFIER) {
-      if (token.value === "print") {
-        return this.parsePrintStatement();
-      }
+    if (t.type === TokenType.IDENTIFIER) {
+      if (t.value === "print") return this.parsePrintStatement();
 
       const next = this.peek();
-      if (next && next.type === TokenType.ASSIGN) {
-        return this.parseAssignment();
-      }
+      if (next && next.type === TokenType.ASSIGN) return this.parseAssignment();
 
       return this.parseExpressionStatement();
     }
 
-    if (token.type === TokenType.NUMBER || token.type === TokenType.STRING) {
+    if (t.type === TokenType.NUMBER || t.type === TokenType.STRING)
       return this.parseExpressionStatement();
-    }
 
-    if (token.type === TokenType.NEWLINE) {
+    if (t.type === TokenType.NEWLINE) {
       this.pos++;
       return null;
     }
 
-    throw new Error(`Unexpected token: ${token.type} at line ${token.line}`);
+    throw new Error(`Unexpected token: ${t.type}`);
   }
 
   private parsePrintStatement(): ExpressionStatement {
     this.eat(TokenType.IDENTIFIER, "print");
 
     const args: Expression[] = [];
-
     while (!this.match(TokenType.NEWLINE) && !this.match(TokenType.EOF)) {
-      args.push(this.parseExpression());
-
-      if (this.match(TokenType.COMMA)) {
-        this.eat(TokenType.COMMA);
-      } else break;
+      args.push(this.parseExpression(0));
+      if (this.match(TokenType.COMMA)) this.eat(TokenType.COMMA);
+      else break;
     }
 
     this.skipNewlines();
@@ -130,89 +121,117 @@ export class Parser {
   }
 
   private parseAssignment(): Assignment {
-    const leftToken = this.eat(TokenType.IDENTIFIER);
-    const left: Identifier = { type: "Identifier", name: leftToken.value };
-
+    const id = this.eat(TokenType.IDENTIFIER);
     this.eat(TokenType.ASSIGN);
-    const right = this.parseExpression();
-
+    const right = this.parseExpression(0);
     this.skipNewlines();
-
-    return { type: "Assignment", left, right };
+    return {
+      type: "Assignment",
+      left: { type: "Identifier", name: id.value },
+      right,
+    };
   }
 
   private parseExpressionStatement(): ExpressionStatement {
-    const expr = this.parseExpression();
+    const expr = this.parseExpression(0);
     this.skipNewlines();
     return { type: "ExpressionStatement", expression: expr };
   }
 
-  // ------------------ Expressions ------------------
-  private parseExpression(): Expression {
-    let left = this.parsePrimary();
+  // -----------------------------------------------------
+  // ---------------- Pratt Parsing Core -----------------
+  // -----------------------------------------------------
 
-    if (
-      this.match(TokenType.PLUS) ||
-      this.match(TokenType.MINUS) ||
-      this.match(TokenType.STAR) ||
-      this.match(TokenType.SLASH) ||
-      this.match(TokenType.MOD)
-    ) {
-      const operator = this.current().value;
-      this.pos++;
-
-      const right = this.parseExpression();
-      left = { type: "BinaryExpression", left, operator, right };
+  // Binding powers
+  private lbp(type: TokenType): number {
+    switch (type) {
+      case TokenType.PLUS:
+      case TokenType.MINUS:
+        return 10;
+      case TokenType.STAR:
+      case TokenType.SLASH:
+      case TokenType.MOD:
+        return 20;
+      default:
+        return 0;
     }
-
-    return left;
   }
 
-  private parsePrimary(): Expression {
-    const token = this.current();
+  // Prefix parse functions
+  private parsePrefix(t: Token): Expression {
+    switch (t.type) {
+      case TokenType.NUMBER:
+        return { type: "NumberLiteral", value: t.value };
 
-    if (token.type === TokenType.NUMBER) {
-      this.pos++;
-      return { type: "NumberLiteral", value: token.value };
-    }
+      case TokenType.STRING:
+        return { type: "StringLiteral", value: t.value };
 
-    if (token.type === TokenType.STRING) {
-      this.pos++;
-      return { type: "StringLiteral", value: token.value };
-    }
+      case TokenType.IDENTIFIER:
+        return { type: "Identifier", name: t.value };
 
-    if (token.type === TokenType.IDENTIFIER) {
-      this.pos++;
-      let expr: Expression = {
-        type: "Identifier",
-        name: token.value,
-      };
-
-      // Function call
-      if (this.match(TokenType.LPAREN)) {
-        this.eat(TokenType.LPAREN);
-        const args: Expression[] = [];
-
-        while (!this.match(TokenType.RPAREN)) {
-          args.push(this.parseExpression());
-          if (this.match(TokenType.COMMA)) this.eat(TokenType.COMMA);
-          else break;
-        }
-
+      case TokenType.LPAREN: {
+        const expr = this.parseExpression(0);
         this.eat(TokenType.RPAREN);
+        return expr;
+      }
 
-        expr = {
+      default:
+        throw new Error("Unexpected token in prefix: " + t.type);
+    }
+  }
+
+  // Infix parse functions
+  private parseInfix(left: Expression, t: Token): Expression {
+    switch (t.type) {
+      case TokenType.PLUS:
+      case TokenType.MINUS:
+      case TokenType.STAR:
+      case TokenType.SLASH:
+      case TokenType.MOD: {
+        const right = this.parseExpression(this.lbp(t.type));
+        return {
+          type: "BinaryExpression",
+          left,
+          operator: t.value,
+          right,
+        };
+      }
+
+      case TokenType.LPAREN: {
+        // function call
+        const args: Expression[] = [];
+        if (!this.match(TokenType.RPAREN)) {
+          do {
+            args.push(this.parseExpression(0));
+          } while (this.match(TokenType.COMMA) && this.next());
+        }
+        this.eat(TokenType.RPAREN);
+        return {
           type: "CallExpression",
-          callee: expr as Identifier,
+          callee: left as Identifier,
           args,
         };
       }
 
-      return expr;
+      default:
+        throw new Error("Unexpected infix token: " + t.type);
+    }
+  }
+
+  // Pratt loop
+  private parseExpression(minBP: number): Expression {
+    const t = this.next();
+    let left = this.parsePrefix(t);
+
+    for (;;) {
+      const op = this.current();
+      const bp = this.lbp(op.type);
+      if (bp <= minBP) break;
+
+      this.next();
+      left = this.parseInfix(left, op);
     }
 
-    throw new Error(
-      `Unexpected token in expression: ${token.type} at line ${token.line}`,
-    );
+    return left;
   }
 }
