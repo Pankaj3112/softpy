@@ -1,6 +1,7 @@
 export type Expression =
   | NumberLiteral
   | StringLiteral
+  | BooleanLiteral
   | Identifier
   | BinaryExpression
   | CallExpression;
@@ -12,6 +13,11 @@ export interface NumberLiteral {
 
 export interface StringLiteral {
   type: "StringLiteral";
+  value: string;
+}
+
+export interface BooleanLiteral {
+  type: "BooleanLiteral";
   value: string;
 }
 

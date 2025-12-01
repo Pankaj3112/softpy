@@ -9,6 +9,7 @@ import {
   Identifier,
   BinaryExpression,
   CallExpression,
+  BooleanLiteral,
 } from "../parser/ast";
 
 export class CodeGenerator {
@@ -47,6 +48,8 @@ export class CodeGenerator {
         return this.generateNumberLiteral(expr);
       case "StringLiteral":
         return this.generateStringLiteral(expr);
+      case "BooleanLiteral":
+        return this.generateBooleanLiteral(expr);
       case "Identifier":
         return this.generateIdentifier(expr);
       case "BinaryExpression":
@@ -66,6 +69,10 @@ export class CodeGenerator {
     return `"${node.value}"`;
   }
 
+  private generateBooleanLiteral(node: BooleanLiteral): string {
+    return node.value === "True" ? "true" : "false";
+  }
+
   private generateIdentifier(node: Identifier): string {
     return node.name;
   }
@@ -81,9 +88,11 @@ export class CodeGenerator {
       .map((arg) => this.generateExpression(arg))
       .join(", ");
 
-    // Handle built-in functions
-    if (node.callee.name === "print") {
-      return `console.log(${args})`;
+    switch (node.callee.name) {
+      case "print":
+        return `console.log(${args})`;
+      default:
+        break;
     }
 
     return `${node.callee.name}(${args})`;

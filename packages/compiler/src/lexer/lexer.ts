@@ -24,6 +24,7 @@ export class Lexer {
     if (char === '"') return this.stringToken();
     if (char === "#") return this.commentToken();
     if (this.isDigit(char)) return this.numberToken();
+    if (this.isBooleanStart(char)) return this.booleanToken();
     if (this.isIdentifierStart(char)) return this.identifierToken();
 
     // Operators / punctuation
@@ -63,6 +64,10 @@ export class Lexer {
 
   private isIdentifierStart(char: string): boolean {
     return /[a-zA-Z_]/.test(char);
+  }
+
+  private isBooleanStart(char: string): boolean {
+    return char === "T" || char === "F";
   }
 
   private isIdentifierPart(char: string): boolean {
@@ -145,6 +150,25 @@ export class Lexer {
     }
 
     return this.createToken(TokenType.NUMBER, result, startCol);
+  }
+
+  private booleanToken(): Token {
+    const startCol = this.column;
+    let result = "";
+
+    if (this.input.startsWith("True", this.pos)) {
+      result = "True";
+      for (let i = 0; i < 4; i++) this.advance();
+    } else if (this.input.startsWith("False", this.pos)) {
+      result = "False";
+      for (let i = 0; i < 5; i++) this.advance();
+    } else {
+      throw new Error(
+        `Invalid boolean literal at line ${this.line}, column ${startCol}`,
+      );
+    }
+
+    return this.createToken(TokenType.BOOLEAN, result, startCol);
   }
 
   private identifierToken(): Token {

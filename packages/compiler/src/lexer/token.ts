@@ -3,6 +3,7 @@ export enum TokenType {
   NUMBER,
   STRING,
   IDENTIFIER,
+  BOOLEAN,
 
   // Structure
   NEWLINE,

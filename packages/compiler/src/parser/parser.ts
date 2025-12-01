@@ -166,6 +166,9 @@ export class Parser {
       case TokenType.STRING:
         return { type: "StringLiteral", value: t.value };
 
+      case TokenType.BOOLEAN:
+        return { type: "BooleanLiteral", value: t.value };
+
       case TokenType.IDENTIFIER:
         return { type: "Identifier", name: t.value };
 
