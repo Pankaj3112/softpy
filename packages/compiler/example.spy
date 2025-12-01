@@ -1,5 +1,10 @@
-x = 10
-y = 5
-z = x + y
+a = 10
+b = 5
+c = a + b
+d = a - b
+e = a * b
+f = a / b
+g = a % b
 
-print x, "+", y, "=", z
+
+print a, b, c, d, e, f, g

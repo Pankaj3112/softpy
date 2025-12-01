@@ -10,68 +10,38 @@ export class Lexer {
     this.input = input;
   }
 
+  // ------------------ Public Method ------------------
   public getNextToken(): Token {
-    if (this.pos >= this.input.length) {
-      return {
-        type: TokenType.EOF,
-        value: "",
-        line: this.line,
-        column: this.column,
-      };
+    this.skipWhitespace();
+
+    if (this.isEOF()) {
+      return this.createToken(TokenType.EOF, "");
     }
 
-    const char = this.input[this.pos] ?? "\0";
+    const char = this.currentChar();
 
-    // Skip spaces
-    if (char === " " || char === "\t") {
-      this.advance();
-      return this.getNextToken();
-    }
-
-    // Newline
-    if (char === "\n") {
-      this.advance();
-      return {
-        type: TokenType.NEWLINE,
-        value: "\n",
-        line: this.line - 1,
-        column: this.column,
-      };
-    }
-
-    // String literal
-    if (char === '"') {
-      return this.string();
-    }
-
-    // Numbers
-    if (/\d/.test(char)) {
-      return this.number();
-    }
-
-    // Identifiers (variables)
-    if (/[a-zA-Z_]/.test(char)) {
-      return this.identifier();
-    }
-
-    if (/[=+\-*/(),]/.test(char)) {
-      const startCol = this.column;
-      this.advance();
-      return {
-        type: TokenType.OPERATOR,
-        value: char,
-        line: this.line,
-        column: startCol,
-      };
-    }
+    if (char === "\n") return this.newlineToken();
+    if (char === '"') return this.stringToken();
+    if (this.isDigit(char)) return this.numberToken();
+    if (this.isIdentifierStart(char)) return this.identifierToken();
+    if (this.isOperatorChar(char)) return this.operatorToken();
 
     throw new Error(
       `Unknown character ${char} at line ${this.line}, column ${this.column}`,
     );
   }
 
+  // ------------------ Helpers ------------------
+  private currentChar(): string {
+    return this.input[this.pos] ?? "\0";
+  }
+
+  private peekChar(offset = 1): string {
+    return this.input[this.pos + offset] ?? "\0";
+  }
+
   private advance() {
-    if (this.input[this.pos] === "\n") {
+    if (this.currentChar() === "\n") {
       this.line++;
       this.column = 1;
     } else {
@@ -80,58 +50,103 @@ export class Lexer {
     this.pos++;
   }
 
-  private string(): Token {
-    let result = "";
-    const startCol = this.column;
-    this.advance(); // Skip opening quote
-    while (this.pos < this.input.length && this.input[this.pos] !== '"') {
-      result += this.input[this.pos];
+  private isEOF(): boolean {
+    return this.pos >= this.input.length;
+  }
+
+  private isDigit(char: string): boolean {
+    return /\d/.test(char);
+  }
+
+  private isIdentifierStart(char: string): boolean {
+    return /[a-zA-Z_]/.test(char);
+  }
+
+  private isIdentifierPart(char: string): boolean {
+    return /[a-zA-Z0-9_]/.test(char);
+  }
+
+  private isOperatorChar(char: string): boolean {
+    return /[=+\-*/(),%]/.test(char);
+  }
+
+  private skipWhitespace() {
+    while (
+      !this.isEOF() &&
+      (this.currentChar() === " " || this.currentChar() === "\t")
+    ) {
       this.advance();
     }
-    if (this.pos >= this.input.length) {
+  }
+
+  private createToken(
+    type: TokenType,
+    value: string,
+    startCol?: number,
+  ): Token {
+    return {
+      type,
+      value,
+      line: this.line,
+      column: startCol ?? this.column,
+    };
+  }
+
+  // ------------------ Token Parsers ------------------
+  private newlineToken(): Token {
+    const token = this.createToken(TokenType.NEWLINE, "\n", this.column);
+    this.advance();
+    return token;
+  }
+
+  private stringToken(): Token {
+    const startCol = this.column;
+    let result = "";
+    this.advance(); // skip opening quote
+
+    while (!this.isEOF() && this.currentChar() !== '"') {
+      result += this.currentChar();
+      this.advance();
+    }
+
+    if (this.isEOF()) {
       throw new Error(
         `Unterminated string at line ${this.line}, column ${startCol}`,
       );
     }
-    this.advance(); // Skip closing quote
-    return {
-      type: TokenType.STRING,
-      value: result,
-      line: this.line,
-      column: startCol,
-    };
+
+    this.advance(); // skip closing quote
+    return this.createToken(TokenType.STRING, result, startCol);
   }
 
-  private number(): Token {
-    let result = "";
+  private numberToken(): Token {
     const startCol = this.column;
-    while (this.pos < this.input.length && /\d/.test(this.input[this.pos]!)) {
-      result += this.input[this.pos];
+    let result = "";
+
+    while (!this.isEOF() && this.isDigit(this.currentChar())) {
+      result += this.currentChar();
       this.advance();
     }
-    return {
-      type: TokenType.NUMBER,
-      value: result,
-      line: this.line,
-      column: startCol,
-    };
+
+    return this.createToken(TokenType.NUMBER, result, startCol);
   }
 
-  private identifier(): Token {
-    let result = "";
+  private identifierToken(): Token {
     const startCol = this.column;
-    while (
-      this.pos < this.input.length &&
-      /[a-zA-Z0-9_]/.test(this.input[this.pos]!)
-    ) {
-      result += this.input[this.pos];
+    let result = "";
+
+    while (!this.isEOF() && this.isIdentifierPart(this.currentChar())) {
+      result += this.currentChar();
       this.advance();
     }
-    return {
-      type: TokenType.IDENTIFIER,
-      value: result,
-      line: this.line,
-      column: startCol,
-    };
+
+    return this.createToken(TokenType.IDENTIFIER, result, startCol);
+  }
+
+  private operatorToken(): Token {
+    const startCol = this.column;
+    const char = this.currentChar();
+    this.advance();
+    return this.createToken(TokenType.OPERATOR, char, startCol);
   }
 }

@@ -20,7 +20,7 @@
     "url": "https://github.com/Pankaj3112/softpy/issues"
   },
   "scripts": {
-    "dev": "ts-node ./cli/index.ts",
+    "dev": "tsc --watch",
     "build": "tsc"
   },
   "author": "Pankaj Beniwal",
