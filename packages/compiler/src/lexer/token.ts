@@ -36,6 +36,8 @@ export enum TokenType {
   ELSE = "ELSE",
   ELIF = "ELIF",
 
+  WHILE = "WHILE",
+
   // Punctuation / delimiters
   LPAREN = "LPAREN",
   RPAREN = "RPAREN",

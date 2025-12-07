@@ -17,6 +17,7 @@ export class Lexer {
     if: TokenType.IF,
     elif: TokenType.ELIF,
     else: TokenType.ELSE,
+    while: TokenType.WHILE,
   };
 
   constructor(input: string) {

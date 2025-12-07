@@ -9,3 +9,6 @@ elif x > 5:
 else:
     print 3
     print "small"
+
+while x < 10:
+    print x
