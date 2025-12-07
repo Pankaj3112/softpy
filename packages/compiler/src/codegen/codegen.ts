@@ -11,9 +11,15 @@ import {
   CallExpression,
   BooleanLiteral,
   UnaryExpression,
+  IfStatement,
+  ElifClause,
+  ElseClause,
 } from "../parser/ast";
 
 export class CodeGenerator {
+  private indentLevel = 0;
+  private readonly indentSize = 2;
+
   // ------------------ Entry Point ------------------
   public generate(node: Program): string {
     return node.body.map((stmt) => this.generateStatement(stmt)).join("\n");
@@ -26,20 +32,66 @@ export class CodeGenerator {
         return this.generateAssignment(stmt);
       case "ExpressionStatement":
         return this.generateExpressionStatement(stmt);
+      case "IfStatement":
+        return this.generateIfStatement(stmt);
       default:
         return this.unreachable(stmt);
     }
   }
 
   private generateAssignment(node: Assignment): string {
-    // Add `let` for all top-level assignments
     const left = this.generateExpression(node.left);
     const right = this.generateExpression(node.right);
-    return `let ${left} = ${right};`;
+    return `${this.indent()}let ${left} = ${right};`;
   }
 
   private generateExpressionStatement(node: ExpressionStatement): string {
-    return `${this.generateExpression(node.expression)};`;
+    return `${this.indent()}${this.generateExpression(node.expression)};`;
+  }
+
+  private generateIfStatement(node: IfStatement): string {
+    const lines: string[] = [];
+
+    // Generate if condition
+    const condition = this.generateExpression(node.condition);
+    lines.push(`${this.indent()}if (${condition}) {`);
+
+    // Generate if body
+    this.indentLevel++;
+    node.consequent.forEach((stmt) => {
+      lines.push(this.generateStatement(stmt));
+    });
+    this.indentLevel--;
+
+    // Generate elif/else clauses
+    if (node.alternate && node.alternate.length > 0) {
+      for (const clause of node.alternate) {
+        if (clause.type === "ElifClause") {
+          lines.push(
+            `${this.indent()}} else if (${this.generateExpression(clause.condition)}) {`,
+          );
+
+          this.indentLevel++;
+          clause.consequent.forEach((stmt) => {
+            lines.push(this.generateStatement(stmt));
+          });
+          this.indentLevel--;
+        } else if (clause.type === "ElseClause") {
+          lines.push(`${this.indent()}} else {`);
+
+          this.indentLevel++;
+          clause.consequent.forEach((stmt) => {
+            lines.push(this.generateStatement(stmt));
+          });
+          this.indentLevel--;
+        }
+      }
+    }
+
+    // Close the if statement
+    lines.push(`${this.indent()}}`);
+
+    return lines.join("\n");
   }
 
   // ------------------ Expression Generation ------------------
@@ -120,6 +172,10 @@ export class CodeGenerator {
   }
 
   // ------------------ Utility ------------------
+  private indent(): string {
+    return " ".repeat(this.indentLevel * this.indentSize);
+  }
+
   private unreachable(x: never): never {
     throw new Error(`Unexpected AST node: ${JSON.stringify(x)}`);
   }

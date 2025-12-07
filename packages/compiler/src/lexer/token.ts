@@ -1,38 +1,46 @@
 export enum TokenType {
   // Literals
-  NUMBER,
-  STRING,
-  IDENTIFIER,
-  BOOLEAN,
+  NUMBER = "NUMBER",
+  STRING = "STRING",
+  IDENTIFIER = "IDENTIFIER",
+  BOOLEAN = "BOOLEAN",
 
   // Structure
-  NEWLINE,
-  COMMENT,
-  EOF,
+  NEWLINE = "NEWLINE",
+  INDENT = "INDENT",
+  DEDENT = "DEDENT",
+  COMMENT = "COMMENT",
+  EOF = "EOF",
 
   // Operators
-  PLUS,
-  MINUS,
-  STAR,
-  SLASH,
-  MOD,
-  ASSIGN, // =
-  EQUAL, // ==
-  NOT_EQUAL, // !=
-  LT,
-  GT, // < >
-  LTE,
-  GTE, // <= >=
+  PLUS = "PLUS",
+  MINUS = "MINUS",
+  STAR = "STAR",
+  SLASH = "SLASH",
+  MOD = "MOD",
+  ASSIGN = "ASSIGN", // =
+  EQUAL = "EQUAL", // ==
+  NOT_EQUAL = "NOT_EQUAL", // !=
+  LT = "LT",
+  GT = "GT", // < >
+  LTE = "LTE",
+  GTE = "GTE", // <= >=
 
   // Logical Operators
-  AND, // and
-  OR, // or
-  NOT, // not
+  AND = "AND", // and
+  OR = "OR", // or
+  NOT = "NOT", // not
+
+  // Conditional Keywords
+  IF = "IF",
+  ELSE = "ELSE",
+  ELIF = "ELIF",
 
   // Punctuation / delimiters
-  LPAREN,
-  RPAREN,
-  COMMA,
+  LPAREN = "LPAREN",
+  RPAREN = "RPAREN",
+  COMMA = "COMMA",
+  COLON = "COLON",
 }
 
 export interface Token {

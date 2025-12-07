@@ -6,11 +6,17 @@ export class Lexer {
   private line = 1;
   private column = 1;
 
+  private indentStack: number[] = [0];
+  private pendingTokens: Token[] = [];
+  private atLineStart = true;
+
   private keywords: Record<string, TokenType> = {
     and: TokenType.AND,
     or: TokenType.OR,
     not: TokenType.NOT,
-    // add more here
+    if: TokenType.IF,
+    elif: TokenType.ELIF,
+    else: TokenType.ELSE,
   };
 
   constructor(input: string) {
@@ -19,8 +25,27 @@ export class Lexer {
 
   // ------------------ Public Method ------------------
   public getNextToken(): Token {
+    // Return pending tokens first (DEDENT tokens)
+    if (this.pendingTokens.length > 0) {
+      return this.pendingTokens.shift()!;
+    }
+
+    // Handle indentation at line start
+    if (this.atLineStart && !this.isEOF()) {
+      const indentToken = this.handleIndentation();
+      if (indentToken) return indentToken;
+    }
+
     this.skipWhitespace();
-    if (this.isEOF()) return this.createToken(TokenType.EOF, "");
+
+    if (this.isEOF()) {
+      // Emit remaining DEDENTs at EOF
+      if (this.indentStack.length > 1) {
+        this.indentStack.pop();
+        return this.createToken(TokenType.DEDENT, "", this.column);
+      }
+      return this.createToken(TokenType.EOF, "", this.column);
+    }
 
     const char = this.currentChar();
 
@@ -35,6 +60,71 @@ export class Lexer {
     throw new Error(
       `Unknown character ${char} at line ${this.line}, column ${this.column}`,
     );
+  }
+
+  // ------------------ Indentation Handling ------------------
+  private handleIndentation(): Token | null {
+    const startCol = this.column;
+    let indentLevel = 0;
+
+    // Count spaces/tabs at line start
+    while (
+      !this.isEOF() &&
+      (this.currentChar() === " " || this.currentChar() === "\t")
+    ) {
+      if (this.currentChar() === "\t") {
+        indentLevel += 8; // Treat tab as 8 spaces
+      } else {
+        indentLevel += 1;
+      }
+      this.advance();
+    }
+
+    // Skip blank lines and comments - don't process indentation for them
+    if (
+      this.isEOF() ||
+      this.currentChar() === "\n" ||
+      this.currentChar() === "#"
+    ) {
+      this.atLineStart = false;
+      return null;
+    }
+
+    this.atLineStart = false;
+
+    const currentIndent = this.indentStack[this.indentStack.length - 1] ?? 0;
+
+    if (indentLevel > currentIndent) {
+      // INDENT
+      this.indentStack.push(indentLevel);
+      return this.createToken(TokenType.INDENT, "", startCol);
+    } else if (indentLevel < currentIndent) {
+      // DEDENT (possibly multiple)
+      while (
+        this.indentStack.length > 1 &&
+        (this.indentStack[this.indentStack.length - 1] ?? 0) > indentLevel
+      ) {
+        this.indentStack.pop();
+        this.pendingTokens.push(
+          this.createToken(TokenType.DEDENT, "", startCol),
+        );
+      }
+
+      // Check for indentation error
+      if (
+        (this.indentStack[this.indentStack.length - 1] ?? 0) !== indentLevel
+      ) {
+        throw new Error(
+          `Indentation error at line ${this.line}: inconsistent indentation`,
+        );
+      }
+
+      // Return first DEDENT, rest are pending
+      return this.pendingTokens.shift()!;
+    }
+
+    // Same indentation level
+    return null;
   }
 
   // ------------------ Helpers ------------------
@@ -77,13 +167,14 @@ export class Lexer {
   }
 
   private isOperatorChar(char: string): boolean {
-    return /[=+\-*/(),%<>]/.test(char);
+    return /[=+\-*/(),%<>!:]/.test(char);
   }
 
   private skipWhitespace() {
     while (
       !this.isEOF() &&
-      (this.currentChar() === " " || this.currentChar() === "\t")
+      (this.currentChar() === " " || this.currentChar() === "\t") &&
+      !this.atLineStart
     ) {
       this.advance();
     }
@@ -106,6 +197,7 @@ export class Lexer {
   private newlineToken(): Token {
     const token = this.createToken(TokenType.NEWLINE, "\n", this.column);
     this.advance();
+    this.atLineStart = true; // Reset for next line
     return token;
   }
 
@@ -186,7 +278,6 @@ export class Lexer {
     return this.createToken(type, result, startCol);
   }
 
-  // -------- Operator Lexer (updated for new TokenTypes) --------
   private operatorToken(): Token {
     const startCol = this.column;
     const char = this.currentChar();
@@ -239,6 +330,8 @@ export class Lexer {
         return this.createToken(TokenType.LT, "<", startCol);
       case ">":
         return this.createToken(TokenType.GT, ">", startCol);
+      case ":":
+        return this.createToken(TokenType.COLON, ":", startCol);
     }
 
     throw new Error(

@@ -1,1 +1,11 @@
-print(1,2)
+x = 10
+
+if x > 10:
+    print 1
+    print "large"
+elif x > 5:
+    print 2
+    print "medium"
+else:
+    print 3
+    print "small"

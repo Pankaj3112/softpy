@@ -4,121 +4,354 @@ import {
   Assignment,
   ExpressionStatement,
   Expression,
-  NumberLiteral,
-  StringLiteral,
   Identifier,
-  BinaryExpression,
-  CallExpression,
+  IfStatement,
+  ElifClause,
+  ElseClause,
 } from "./ast";
 import { Token, TokenType } from "../lexer/token";
+
+// ============================================================================
+// Parselet Interfaces
+// ============================================================================
+
+interface PrefixParselet {
+  parse(parser: Parser, token: Token): Expression;
+}
+
+interface InfixParselet {
+  parse(parser: Parser, left: Expression, token: Token): Expression;
+  getPrecedence(): number;
+}
+
+// ============================================================================
+// Prefix Parselets
+// ============================================================================
+
+class LiteralParselet implements PrefixParselet {
+  constructor(private literalType: string) {}
+
+  parse(_parser: Parser, token: Token): Expression {
+    return { type: this.literalType, value: token.value } as Expression;
+  }
+}
+
+class IdentifierParselet implements PrefixParselet {
+  parse(_parser: Parser, token: Token): Expression {
+    return { type: "Identifier", name: token.value };
+  }
+}
+
+class GroupParselet implements PrefixParselet {
+  parse(parser: Parser, _token: Token): Expression {
+    const expr = parser.parseExpression(0);
+    parser.eat(TokenType.RPAREN);
+    return expr;
+  }
+}
+
+class UnaryParselet implements PrefixParselet {
+  constructor(private precedence: number) {}
+
+  parse(parser: Parser, token: Token): Expression {
+    const right = parser.parseExpression(this.precedence);
+    return {
+      type: "UnaryExpression",
+      operator: token.value,
+      argument: right,
+    };
+  }
+}
+
+// ============================================================================
+// Infix Parselets
+// ============================================================================
+
+class BinaryOpParselet implements InfixParselet {
+  constructor(
+    private precedence: number,
+    private rightAssociative = false,
+  ) {}
+
+  getPrecedence(): number {
+    return this.precedence;
+  }
+
+  parse(parser: Parser, left: Expression, token: Token): Expression {
+    const adjustment = this.rightAssociative ? 1 : 0;
+    const right = parser.parseExpression(this.precedence - adjustment);
+    return {
+      type: "BinaryExpression",
+      left,
+      operator: token.value,
+      right,
+    };
+  }
+}
+
+class CallParselet implements InfixParselet {
+  getPrecedence(): number {
+    return Precedence.CALL;
+  }
+
+  parse(parser: Parser, left: Expression, _token: Token): Expression {
+    const args: Expression[] = [];
+
+    if (!parser.match(TokenType.RPAREN)) {
+      do {
+        if (parser.match(TokenType.COMMA)) {
+          parser.eat(TokenType.COMMA);
+        }
+        args.push(parser.parseExpression(0));
+      } while (parser.match(TokenType.COMMA));
+    }
+
+    parser.eat(TokenType.RPAREN);
+
+    return {
+      type: "CallExpression",
+      callee: left as Identifier,
+      args,
+    };
+  }
+}
+
+// ============================================================================
+// Precedence Levels
+// ============================================================================
+
+enum Precedence {
+  LOWEST = 0,
+  OR = 4,
+  AND = 5,
+  COMPARISON = 8,
+  ADDITIVE = 10,
+  MULTIPLICATIVE = 20,
+  UNARY = 30,
+  CALL = 100,
+}
+
+// ============================================================================
+// Statement Parser Type
+// ============================================================================
+
+type StatementParser = (parser: Parser) => Statement;
+
+// ============================================================================
+// Main Parser Class
+// ============================================================================
 
 export class Parser {
   private tokens: Token[];
   private pos = 0;
 
+  private prefixParselets = new Map<TokenType, PrefixParselet>();
+  private infixParselets = new Map<TokenType, InfixParselet>();
+  private statementParsers = new Map<string, StatementParser>();
+
   constructor(tokens: Token[]) {
     this.tokens = tokens;
+    this.registerDefaultParselets();
+    this.registerDefaultStatements();
   }
 
+  // ============================================================================
+  // Registration Methods
+  // ============================================================================
+
+  private registerDefaultParselets() {
+    // Literals
+    this.registerPrefix(TokenType.NUMBER, new LiteralParselet("NumberLiteral"));
+    this.registerPrefix(TokenType.STRING, new LiteralParselet("StringLiteral"));
+    this.registerPrefix(
+      TokenType.BOOLEAN,
+      new LiteralParselet("BooleanLiteral"),
+    );
+
+    // Identifiers and grouping
+    this.registerPrefix(TokenType.IDENTIFIER, new IdentifierParselet());
+    this.registerPrefix(TokenType.LPAREN, new GroupParselet());
+
+    // Unary operators
+    this.registerPrefix(TokenType.NOT, new UnaryParselet(Precedence.UNARY));
+
+    // Logical operators
+    this.registerInfix(TokenType.OR, new BinaryOpParselet(Precedence.OR));
+    this.registerInfix(TokenType.AND, new BinaryOpParselet(Precedence.AND));
+
+    // Comparison operators
+    const comparisonOps = [
+      TokenType.GT,
+      TokenType.LT,
+      TokenType.GTE,
+      TokenType.LTE,
+      TokenType.EQUAL,
+      TokenType.NOT_EQUAL,
+    ];
+    comparisonOps.forEach((op) => {
+      this.registerInfix(op, new BinaryOpParselet(Precedence.COMPARISON));
+    });
+
+    // Arithmetic operators
+    const additiveOps = [TokenType.PLUS, TokenType.MINUS];
+    additiveOps.forEach((op) => {
+      this.registerInfix(op, new BinaryOpParselet(Precedence.ADDITIVE));
+    });
+
+    const multiplicativeOps = [TokenType.STAR, TokenType.SLASH, TokenType.MOD];
+    multiplicativeOps.forEach((op) => {
+      this.registerInfix(op, new BinaryOpParselet(Precedence.MULTIPLICATIVE));
+    });
+
+    // Function calls
+    this.registerInfix(TokenType.LPAREN, new CallParselet());
+  }
+
+  private registerDefaultStatements() {
+    this.registerStatement("print", this.parsePrintStatement.bind(this));
+  }
+
+  public registerPrefix(type: TokenType, parselet: PrefixParselet) {
+    this.prefixParselets.set(type, parselet);
+  }
+
+  public registerInfix(type: TokenType, parselet: InfixParselet) {
+    this.infixParselets.set(type, parselet);
+  }
+
+  public registerStatement(keyword: string, parser: StatementParser) {
+    this.statementParsers.set(keyword, parser);
+  }
+
+  // ============================================================================
+  // Token Navigation
+  // ============================================================================
+
   private current(): Token {
-    const t = this.tokens[this.pos];
-    if (!t) throw new Error("Unexpected end of input");
-    return t;
+    return (
+      this.tokens[this.pos] ?? {
+        type: TokenType.EOF,
+        value: "",
+        line: 0,
+        column: 0,
+      }
+    );
   }
 
   private next(): Token {
-    const t = this.tokens[this.pos++];
-    if (!t) throw new Error("Unexpected end of input");
-    return t;
+    const token = this.current();
+    this.pos++;
+    return token;
   }
 
   private peek(offset = 1): Token | null {
     return this.tokens[this.pos + offset] ?? null;
   }
 
-  private eat(type: TokenType, value?: string): Token {
-    const t = this.current();
-    if (t.type !== type || (value !== undefined && t.value !== value)) {
+  public eat(type: TokenType, value?: string): Token {
+    const token = this.current();
+    if (token.type !== type || (value !== undefined && token.value !== value)) {
       throw new Error(
-        `Expected ${type}${value ? `(${value})` : ""}, got ${t.type}(${t.value})`,
+        `Expected ${type}${value ? ` '${value}'` : ""} at line ${token.line}, got ${token.type} '${token.value}'`,
       );
     }
     this.pos++;
-    return t;
+    return token;
   }
 
-  private match(type: TokenType): boolean {
+  public match(type: TokenType): boolean {
     return this.current().type === type;
   }
 
-  // ---------------- Program ----------------
+  private isAtEnd(): boolean {
+    return this.current().type === TokenType.EOF;
+  }
+
+  // ============================================================================
+  // Utility Methods
+  // ============================================================================
+
+  private skipTrivia() {
+    while (this.match(TokenType.NEWLINE) || this.match(TokenType.COMMENT)) {
+      this.pos++;
+    }
+  }
+
+  // ============================================================================
+  // Entry Point
+  // ============================================================================
+
   public parse(): Program {
     const body: Statement[] = [];
-    while (!this.match(TokenType.EOF)) {
+    while (!this.isAtEnd()) {
       const stmt = this.parseStatement();
       if (stmt) body.push(stmt);
     }
     return { type: "Program", body };
   }
 
-  private skipNewlines() {
-    while (this.match(TokenType.NEWLINE)) this.pos++;
-  }
+  // ============================================================================
+  // Statement Parsing
+  // ============================================================================
 
-  private skipComments() {
-    while (this.match(TokenType.COMMENT)) {
-      this.pos++;
-      this.skipNewlines();
-    }
-  }
-
-  // ---------------- Statements ----------------
   private parseStatement(): Statement | null {
-    this.skipNewlines();
-    this.skipComments();
-    const t = this.current();
+    this.skipTrivia();
 
-    if (t.type === TokenType.IDENTIFIER) {
-      if (t.value === "print") return this.parsePrintStatement();
+    if (this.isAtEnd()) return null;
 
+    const token = this.current();
+
+    // Control flow statements
+    if (token.type === TokenType.IF) {
+      return this.parseIfStatement();
+    }
+
+    // Identifier-based statements
+    if (token.type === TokenType.IDENTIFIER) {
+      // Check for registered statement keywords (like 'print')
+      const parser = this.statementParsers.get(token.value);
+      if (parser) {
+        return parser(this);
+      }
+
+      // Check for assignment
       const next = this.peek();
-      if (next && next.type === TokenType.ASSIGN) return this.parseAssignment();
+      if (next?.type === TokenType.ASSIGN) {
+        return this.parseAssignment();
+      }
 
+      // Fall through to expression statement
       return this.parseExpressionStatement();
     }
 
-    if (
-      [
-        TokenType.NUMBER,
-        TokenType.STRING,
-        TokenType.BOOLEAN,
-        TokenType.LPAREN,
-        TokenType.NOT,
-        TokenType.IDENTIFIER,
-      ].includes(t.type)
-    ) {
+    // Expression statements
+    if (this.prefixParselets.has(token.type)) {
       return this.parseExpressionStatement();
     }
 
-    if (t.type === TokenType.NEWLINE) {
+    // Skip stray newlines
+    if (token.type === TokenType.NEWLINE) {
       this.pos++;
       return null;
     }
 
-    throw new Error(`Unexpected token: ${t.type}`);
+    throw new Error(`Unexpected token ${token.type} at line ${token.line}`);
   }
 
-  private parsePrintStatement(): ExpressionStatement {
-    this.eat(TokenType.IDENTIFIER, "print");
+  private parsePrintStatement(parser: Parser): ExpressionStatement {
+    parser.eat(TokenType.IDENTIFIER, "print");
 
     const args: Expression[] = [];
-    while (!this.match(TokenType.NEWLINE) && !this.match(TokenType.EOF)) {
-      args.push(this.parseExpression(0));
-      if (this.match(TokenType.COMMA)) this.eat(TokenType.COMMA);
-      else break;
+    while (!parser.match(TokenType.NEWLINE) && !parser.isAtEnd()) {
+      args.push(parser.parseExpression(Precedence.LOWEST));
+      if (parser.match(TokenType.COMMA)) {
+        parser.eat(TokenType.COMMA);
+      } else {
+        break;
+      }
     }
 
-    this.skipNewlines();
+    parser.skipTrivia();
 
     return {
       type: "ExpressionStatement",
@@ -131,127 +364,115 @@ export class Parser {
   }
 
   private parseAssignment(): Assignment {
-    const id = this.eat(TokenType.IDENTIFIER);
+    const identifier = this.eat(TokenType.IDENTIFIER);
     this.eat(TokenType.ASSIGN);
-    const right = this.parseExpression(0);
-    this.skipNewlines();
+    const right = this.parseExpression(Precedence.LOWEST);
+    this.skipTrivia();
+
     return {
       type: "Assignment",
-      left: { type: "Identifier", name: id.value },
+      left: { type: "Identifier", name: identifier.value },
       right,
     };
   }
 
   private parseExpressionStatement(): ExpressionStatement {
-    const expr = this.parseExpression(0);
-    this.skipNewlines();
+    const expr = this.parseExpression(Precedence.LOWEST);
+    this.skipTrivia();
     return { type: "ExpressionStatement", expression: expr };
   }
 
-  // -----------------------------------------------------
-  // ---------------- Pratt Parsing Core -----------------
-  // -----------------------------------------------------
-
-  // Binding powers
-  private lbp(type: TokenType): number {
-    switch (type) {
-      case TokenType.PLUS:
-      case TokenType.MINUS:
-        return 10;
-      case TokenType.STAR:
-      case TokenType.SLASH:
-      case TokenType.MOD:
-        return 20;
-      case TokenType.NOT:
-        return 30; // unary NOT
-      case TokenType.AND:
-        return 5;
-      case TokenType.OR:
-        return 4;
-      default:
-        return 0;
+  private parseBlock(): Statement[] {
+    if (!this.match(TokenType.INDENT)) {
+      throw new Error(`Expected indented block at line ${this.current().line}`);
     }
+    this.eat(TokenType.INDENT);
+
+    const statements: Statement[] = [];
+    while (!this.match(TokenType.DEDENT) && !this.isAtEnd()) {
+      const stmt = this.parseStatement();
+      if (stmt) statements.push(stmt);
+    }
+
+    this.eat(TokenType.DEDENT);
+    return statements;
   }
 
-  // Prefix parse functions
-  private parsePrefix(t: Token): Expression {
-    switch (t.type) {
-      case TokenType.NUMBER:
-        return { type: "NumberLiteral", value: t.value };
-      case TokenType.STRING:
-        return { type: "StringLiteral", value: t.value };
-      case TokenType.BOOLEAN:
-        return { type: "BooleanLiteral", value: t.value };
-      case TokenType.IDENTIFIER:
-        return { type: "Identifier", name: t.value };
-      case TokenType.LPAREN: {
-        const expr = this.parseExpression(0);
-        this.eat(TokenType.RPAREN);
-        return expr;
-      }
-      case TokenType.NOT: {
-        const right = this.parseExpression(this.lbp(TokenType.NOT));
-        return {
-          type: "UnaryExpression",
-          operator: "NOT",
-          argument: right,
-        };
-      }
-      default:
-        throw new Error("Unexpected token in prefix: " + t.type);
+  private parseIfStatement(): IfStatement {
+    this.eat(TokenType.IF);
+
+    const condition = this.parseExpression(Precedence.LOWEST);
+    this.eat(TokenType.COLON);
+    this.skipTrivia();
+
+    const consequent = this.parseBlock();
+
+    const alternate: (ElifClause | ElseClause)[] = [];
+
+    // Parse elif clauses
+    while (this.match(TokenType.ELIF)) {
+      this.eat(TokenType.ELIF);
+      const elifCondition = this.parseExpression(Precedence.LOWEST);
+      this.eat(TokenType.COLON);
+      this.skipTrivia();
+
+      const elifConsequent = this.parseBlock();
+
+      alternate.push({
+        type: "ElifClause",
+        condition: elifCondition,
+        consequent: elifConsequent,
+      });
     }
+
+    // Parse else clause
+    if (this.match(TokenType.ELSE)) {
+      this.eat(TokenType.ELSE);
+      this.eat(TokenType.COLON);
+      this.skipTrivia();
+
+      const elseConsequent = this.parseBlock();
+
+      alternate.push({
+        type: "ElseClause",
+        consequent: elseConsequent,
+      });
+    }
+
+    return {
+      type: "IfStatement",
+      condition,
+      consequent,
+      alternate: alternate.length > 0 ? alternate : undefined,
+    };
   }
 
-  // Infix parse functions
-  private parseInfix(left: Expression, t: Token): Expression {
-    switch (t.type) {
-      case TokenType.PLUS:
-      case TokenType.MINUS:
-      case TokenType.STAR:
-      case TokenType.SLASH:
-      case TokenType.MOD:
-      case TokenType.AND:
-      case TokenType.OR: {
-        const right = this.parseExpression(this.lbp(t.type));
-        return {
-          type: "BinaryExpression",
-          left,
-          operator: t.value,
-          right,
-        };
-      }
-      case TokenType.LPAREN: {
-        // function call
-        const args: Expression[] = [];
-        if (!this.match(TokenType.RPAREN)) {
-          do {
-            args.push(this.parseExpression(0));
-          } while (this.match(TokenType.COMMA) && this.next());
-        }
-        this.eat(TokenType.RPAREN);
-        return {
-          type: "CallExpression",
-          callee: left as Identifier,
-          args,
-        };
-      }
-      default:
-        throw new Error("Unexpected infix token: " + t.type);
+  // ============================================================================
+  // Expression Parsing - Pratt Parser
+  // ============================================================================
+
+  public parseExpression(minPrecedence: number): Expression {
+    const token = this.next();
+    const prefix = this.prefixParselets.get(token.type);
+
+    if (!prefix) {
+      throw new Error(
+        `No prefix parselet for ${token.type} at line ${token.line}`,
+      );
     }
-  }
 
-  // Pratt loop
-  private parseExpression(minBP: number): Expression {
-    const t = this.next();
-    let left = this.parsePrefix(t);
+    let left = prefix.parse(this, token);
 
-    for (;;) {
+    while (!this.isAtEnd()) {
       const op = this.current();
-      const bp = this.lbp(op.type);
-      if (bp <= minBP) break;
+      const infix = this.infixParselets.get(op.type);
+
+      if (!infix || infix.getPrecedence() <= minPrecedence) {
+        break;
+      }
 
       this.next();
-      left = this.parseInfix(left, op);
+      left = infix.parse(this, left, op);
     }
 
     return left;

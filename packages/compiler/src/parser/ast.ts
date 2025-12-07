@@ -46,7 +46,7 @@ export interface UnaryExpression {
   argument: Expression;
 }
 
-export type Statement = Assignment | ExpressionStatement;
+export type Statement = Assignment | ExpressionStatement | IfStatement;
 
 export interface Assignment {
   type: "Assignment";
@@ -57,6 +57,24 @@ export interface Assignment {
 export interface ExpressionStatement {
   type: "ExpressionStatement";
   expression: Expression;
+}
+
+export interface IfStatement {
+  type: "IfStatement";
+  condition: Expression;
+  consequent: Statement[];
+  alternate?: (ElifClause | ElseClause)[] | Statement[] | undefined;
+}
+
+export interface ElifClause {
+  type: "ElifClause";
+  condition: Expression;
+  consequent: Statement[];
+}
+
+export interface ElseClause {
+  type: "ElseClause";
+  consequent: Statement[];
 }
 
 export interface Program {
