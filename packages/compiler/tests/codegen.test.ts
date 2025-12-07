@@ -133,4 +133,95 @@ describe("CodeGenerator", () => {
 
     expect(code).toBe("let x = 1;\nlet y = 2;");
   });
+
+  test("generates if-elif-else statement", () => {
+    const ast: Program = {
+      type: "Program",
+      body: [
+        {
+          type: "IfStatement",
+          condition: { type: "Identifier", name: "x" },
+          consequent: [
+            {
+              type: "ExpressionStatement",
+              expression: {
+                type: "CallExpression",
+                callee: { type: "Identifier", name: "print" },
+                args: [{ type: "StringLiteral", value: "x" }],
+              },
+            },
+          ],
+          alternate: [
+            {
+              type: "ElifClause",
+              condition: { type: "Identifier", name: "y" },
+              consequent: [
+                {
+                  type: "ExpressionStatement",
+                  expression: {
+                    type: "CallExpression",
+                    callee: { type: "Identifier", name: "print" },
+                    args: [{ type: "StringLiteral", value: "y" }],
+                  },
+                },
+              ],
+            },
+            {
+              type: "ElseClause",
+              consequent: [
+                {
+                  type: "ExpressionStatement",
+                  expression: {
+                    type: "CallExpression",
+                    callee: { type: "Identifier", name: "print" },
+                    args: [{ type: "StringLiteral", value: "z" }],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    const generator = new CodeGenerator();
+    const code = generator.generate(ast);
+
+    expect(code).toBe(
+      'if (x) {\n  console.log("x");\n} else if (y) {\n  console.log("y");\n} else {\n  console.log("z");\n}',
+    );
+  });
+
+  test("generates nested if statement", () => {
+    const ast: Program = {
+      type: "Program",
+      body: [
+        {
+          type: "IfStatement",
+          condition: { type: "Identifier", name: "x" },
+          consequent: [
+            {
+              type: "IfStatement",
+              condition: { type: "Identifier", name: "y" },
+              consequent: [
+                {
+                  type: "ExpressionStatement",
+                  expression: {
+                    type: "CallExpression",
+                    callee: { type: "Identifier", name: "print" },
+                    args: [{ type: "StringLiteral", value: "y" }],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    const generator = new CodeGenerator();
+    const code = generator.generate(ast);
+
+    expect(code).toBe('if (x) {\n  if (y) {\n    console.log("y");\n  }\n}');
+  });
 });
