@@ -95,9 +95,14 @@ describe("Lexer", () => {
     // Let's check lexer.ts again.
     // Yes, if (char === "#") return this.commentToken();
     // And commentToken returns a token of type COMMENT.
-    
+
     expect(tokens).toEqual([
-      { type: TokenType.COMMENT, value: " This is a comment", line: 1, column: 1 },
+      {
+        type: TokenType.COMMENT,
+        value: " This is a comment",
+        line: 1,
+        column: 1,
+      },
       { type: TokenType.NEWLINE, value: "\n", line: 1, column: 20 },
       { type: TokenType.IDENTIFIER, value: "x", line: 2, column: 1 },
       { type: TokenType.ASSIGN, value: "=", line: 2, column: 3 },
@@ -158,7 +163,7 @@ print z
     while ((tok = lexer.getNextToken()).type !== TokenType.EOF) {
       tokens.push(tok);
     }
-    
+
     // Expected sequence:
     // NEWLINE (empty line) -> skipped? No, lexer.ts: skipWhitespace skips spaces/tabs/newlines?
     // Wait, lexer.ts:
@@ -167,22 +172,34 @@ print z
     // Let's check skipWhitespace in lexer.ts.
     // It's not shown in the read_file output. I should check it.
     // But usually indentation is tricky.
-    
+
     // Let's assume standard python-like lexing:
     // IF x COLON NEWLINE INDENT PRINT x NEWLINE IF y COLON NEWLINE INDENT PRINT y NEWLINE DEDENT DEDENT PRINT z NEWLINE
-    
-    const types = tokens.map(t => t.type);
+
+    const types = tokens.map((t) => t.type);
     expect(types).toEqual([
       TokenType.NEWLINE, // First empty line
-      TokenType.IF, TokenType.IDENTIFIER, TokenType.COLON, TokenType.NEWLINE,
+      TokenType.IF,
+      TokenType.IDENTIFIER,
+      TokenType.COLON,
+      TokenType.NEWLINE,
       TokenType.INDENT,
-      TokenType.IDENTIFIER, TokenType.IDENTIFIER, TokenType.NEWLINE,
-      TokenType.IF, TokenType.IDENTIFIER, TokenType.COLON, TokenType.NEWLINE,
+      TokenType.IDENTIFIER,
+      TokenType.IDENTIFIER,
+      TokenType.NEWLINE,
+      TokenType.IF,
+      TokenType.IDENTIFIER,
+      TokenType.COLON,
+      TokenType.NEWLINE,
       TokenType.INDENT,
-      TokenType.IDENTIFIER, TokenType.IDENTIFIER, TokenType.NEWLINE,
+      TokenType.IDENTIFIER,
+      TokenType.IDENTIFIER,
+      TokenType.NEWLINE,
       TokenType.DEDENT,
       TokenType.DEDENT,
-      TokenType.IDENTIFIER, TokenType.IDENTIFIER, TokenType.NEWLINE
+      TokenType.IDENTIFIER,
+      TokenType.IDENTIFIER,
+      TokenType.NEWLINE,
     ]);
   });
 });
