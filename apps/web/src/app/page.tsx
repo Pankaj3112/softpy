@@ -152,7 +152,7 @@ export default function Home() {
         try {
           new Function(result.code)();
         } catch (e: any) {
-          logs.push(`Runtime Error: ${e.message}`); 
+          logs.push(`Runtime Error: ${e.message}`);
         } finally {
           console.log = originalLog;
         }
