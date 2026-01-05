@@ -1,6 +1,6 @@
 {
   "name": "@softpy/compiler",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "A minimal CLI to run .spy files",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -20,8 +20,9 @@
     "url": "https://github.com/Pankaj3112/softpy/issues"
   },
   "scripts": {
-    "dev": "tsc --watch",
-    "build": "tsc"
+    "dev": "tsup --watch",
+    "build": "tsup",
+    "typecheck": "tsc --noEmit"
   },
   "author": "Pankaj Beniwal",
   "license": "MIT",
@@ -30,6 +31,7 @@
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
+    "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   }
 }
