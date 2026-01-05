@@ -2,14 +2,15 @@ import { Lexer } from "./lexer/lexer";
 import { Parser } from "./parser/parser";
 import { CodeGenerator } from "./codegen/codegen";
 import { Token, TokenType } from "./lexer/token";
+import { Program } from "./parser/ast";
 
 export { Lexer, Parser, CodeGenerator, TokenType };
-export type { Token };
+export type { Token, Program };
 
 export interface CompileResult {
   code: string;
   tokens?: Token[] | undefined;
-  ast?: any | undefined;
+  ast?: Program | undefined;
 }
 
 export interface CompileOptions {
