@@ -46,7 +46,17 @@ export interface UnaryExpression {
   argument: Expression;
 }
 
-export type Statement = Assignment | ExpressionStatement | IfStatement;
+export type Statement =
+  | Assignment
+  | ExpressionStatement
+  | IfStatement
+  | WhileStatement;
+
+export interface WhileStatement {
+  type: "WhileStatement";
+  condition: Expression;
+  body: Statement[];
+}
 
 export interface Assignment {
   type: "Assignment";

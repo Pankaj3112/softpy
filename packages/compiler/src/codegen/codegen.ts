@@ -14,6 +14,7 @@ import {
   IfStatement,
   ElifClause,
   ElseClause,
+  WhileStatement,
 } from "../parser/ast";
 
 export class CodeGenerator {
@@ -34,6 +35,8 @@ export class CodeGenerator {
         return this.generateExpressionStatement(stmt);
       case "IfStatement":
         return this.generateIfStatement(stmt);
+      case "WhileStatement":
+        return this.generateWhileStatement(stmt);
       default:
         return this.unreachable(stmt);
     }
@@ -42,7 +45,7 @@ export class CodeGenerator {
   private generateAssignment(node: Assignment): string {
     const left = this.generateExpression(node.left);
     const right = this.generateExpression(node.right);
-    return `${this.indent()}let ${left} = ${right};`;
+    return `${this.indent()}var ${left} = ${right};`;
   }
 
   private generateExpressionStatement(node: ExpressionStatement): string {
@@ -91,6 +94,21 @@ export class CodeGenerator {
     // Close the if statement
     lines.push(`${this.indent()}}`);
 
+    return lines.join("\n");
+  }
+
+  private generateWhileStatement(node: WhileStatement): string {
+    const lines: string[] = [];
+    const condition = this.generateExpression(node.condition);
+    lines.push(`${this.indent()}while (${condition}) {`);
+
+    this.indentLevel++;
+    node.body.forEach((stmt) => {
+      lines.push(this.generateStatement(stmt));
+    });
+    this.indentLevel--;
+
+    lines.push(`${this.indent()}}`);
     return lines.join("\n");
   }
 

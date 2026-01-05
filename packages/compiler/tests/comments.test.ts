@@ -7,7 +7,7 @@ describe("Comments", () => {
 x = 10 # Inline comment
 `;
     const output = compile(input);
-    expect(output).toContain("let x = 10;");
+    expect(output).toContain("var x = 10;");
     // Comments are not preserved in codegen currently, which is fine.
     // We just want to ensure they don't break compilation.
   });
