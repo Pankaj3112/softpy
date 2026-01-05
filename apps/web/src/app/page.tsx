@@ -3,8 +3,13 @@ import { useState, useEffect, useRef } from "react";
 import { compile } from "@softpy/compiler";
 import Editor from "@monaco-editor/react";
 import SoftPyEditor from "../components/SoftPyEditor";
+import { TokenViewer, ASTViewer } from "../components/PipelineViewers";
 
 const EXAMPLES: Record<string, { code: string; description: string }> = {
+  HelloWorld: {
+    code: `print("Hello, SoftPy!")`,
+    description: "Your first SoftPy program",
+  },
   Fibonacci: {
     code: `func fib(n):
     if n <= 1:
@@ -44,10 +49,8 @@ print(add(5, 10))`,
   },
 };
 
-type PipelineStepStatus = "pending" | "success" | "error" | "active";
-
 export default function Home() {
-  const [input, setInput] = useState(EXAMPLES["Fibonacci"].code);
+  const [input, setInput] = useState(EXAMPLES["HelloWorld"].code);
   const [output, setOutput] = useState("");
   const [ast, setAst] = useState<any>(null);
   const [tokens, setTokens] = useState<any>(null);
@@ -173,7 +176,7 @@ export default function Home() {
       {/* 2. Header */}
       <header className="border-b border-gray-200 dark:border-gray-800 px-4 py-3 flex justify-between items-center bg-white dark:bg-[#161b22]">
         <div className="font-semibold text-sm tracking-wide">
-          SoftPy ⚡ Transparent Compiler Playground
+          SoftPy ⚡
         </div>
         <a
           href="https://github.com/Pankaj3112/softpy"
@@ -254,7 +257,7 @@ export default function Home() {
         <div className="w-full md:w-1/2 flex flex-col bg-white dark:bg-[#0d1117]">
           {/* Output Tabs */}
           <div className="flex border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#161b22]">
-            {(["js", "ast", "tokens"] as const).map((tab) => (
+            {(["js", "tokens", "ast"] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -294,11 +297,10 @@ export default function Home() {
                   automaticLayout: true,
                 }}
               />
+            ) : activeTab === "ast" ? (
+              <ASTViewer ast={ast} />
             ) : (
-              <pre className="p-4 text-sm font-mono text-gray-800 dark:text-gray-300 whitespace-pre-wrap">
-                {activeTab === "ast" && JSON.stringify(ast, null, 2)}
-                {activeTab === "tokens" && JSON.stringify(tokens, null, 2)}
-              </pre>
+              <TokenViewer tokens={tokens} />
             )}
           </div>
         </div>
