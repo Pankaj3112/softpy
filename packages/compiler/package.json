@@ -1,6 +1,6 @@
 {
   "name": "@softpy/compiler",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A minimal CLI to run .spy files",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

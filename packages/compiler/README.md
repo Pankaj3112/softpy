@@ -114,6 +114,61 @@ print x, y, z
 myFunc(arg1, arg2)
 ```
 
+### Control Flow
+
+**If/Else Statements:**
+
+```spy
+if x > 10:
+  print("Large")
+elif x > 5:
+  print("Medium")
+else:
+  print("Small")
+```
+
+**While Loops:**
+
+```spy
+while x > 0:
+  print(x)
+  x = x - 1
+```
+
+**For Loops:**
+
+```spy
+# Range loop
+for i in range(10):
+  print(i)
+
+# Range with start, stop, step
+for i in range(0, 20, 2):
+  print(i)
+```
+
+### Functions
+
+**Function Definition:**
+
+```spy
+func add(a, b):
+  return a + b
+
+result = add(10, 20)
+print(result)
+```
+
+**Recursion:**
+
+```spy
+func factorial(n):
+  if n <= 1:
+    return 1
+  else:
+    return n * factorial(n - 1)
+```
+
 ### Comments
 
 ```spy
@@ -143,11 +198,10 @@ console.log(x);
 
 ## Coming Soon
 
-- Comparison operators: `==`, `!=`, `<`, `>`, `<=`, `>=`
-- Control flow: `if`, `else`, `while`, `for`
-- Function definitions: `func myFunc(x, y)`
 - Lists and dictionaries
 - More built-in functions
+- Classes and Objects
+- Modules and Imports
 
 ---
 
