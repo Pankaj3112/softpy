@@ -1,9 +1,10 @@
 "use client";
 import { useState } from "react";
 import { compile } from "@softpy/compiler";
+import SoftPyEditor from "../components/SoftPyEditor";
 
 export default function Home() {
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState("x = 10\nprint(x)");
   const [output, setOutput] = useState("");
   const [error, setError] = useState("");
 
@@ -24,12 +25,9 @@ export default function Home() {
       <div className="flex flex-col md:flex-row gap-4">
         <div className="w-full md:w-1/2">
           <label className="block mb-2 font-semibold">Input (SoftPy)</label>
-          <textarea
-            className="border p-2 w-full h-96 font-mono bg-gray-50 dark:bg-gray-900 border-gray-300 dark:border-gray-700 rounded"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="x = 10"
-          />
+          <div className="h-96 border border-gray-300 dark:border-gray-700 rounded overflow-hidden">
+            <SoftPyEditor value={input} onChange={setInput} />
+          </div>
         </div>
         <div className="w-full md:w-1/2">
           <label className="block mb-2 font-semibold">
