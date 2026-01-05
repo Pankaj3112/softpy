@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { compile } from "@softpy/compiler";
+import Editor from "@monaco-editor/react";
 import SoftPyEditor from "../components/SoftPyEditor";
 
 const EXAMPLES: Record<string, { code: string; description: string }> = {
@@ -279,9 +280,22 @@ export default function Home() {
                   {error}
                 </div>
               </div>
+            ) : activeTab === "js" ? (
+              <Editor
+                height="100%"
+                defaultLanguage="javascript"
+                value={output}
+                theme="vs-dark"
+                options={{
+                  readOnly: true,
+                  minimap: { enabled: false },
+                  fontSize: 14,
+                  scrollBeyondLastLine: false,
+                  automaticLayout: true,
+                }}
+              />
             ) : (
               <pre className="p-4 text-sm font-mono text-gray-800 dark:text-gray-300 whitespace-pre-wrap">
-                {activeTab === "js" && output}
                 {activeTab === "ast" && JSON.stringify(ast, null, 2)}
                 {activeTab === "tokens" && JSON.stringify(tokens, null, 2)}
               </pre>
