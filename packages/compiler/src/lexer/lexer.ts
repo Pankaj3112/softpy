@@ -18,6 +18,8 @@ export class Lexer {
     elif: TokenType.ELIF,
     else: TokenType.ELSE,
     while: TokenType.WHILE,
+    for: TokenType.FOR,
+    in: TokenType.IN,
   };
 
   constructor(input: string) {

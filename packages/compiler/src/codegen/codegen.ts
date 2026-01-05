@@ -15,6 +15,7 @@ import {
   ElifClause,
   ElseClause,
   WhileStatement,
+  ForStatement,
 } from "../parser/ast";
 
 export class CodeGenerator {
@@ -37,6 +38,8 @@ export class CodeGenerator {
         return this.generateIfStatement(stmt);
       case "WhileStatement":
         return this.generateWhileStatement(stmt);
+      case "ForStatement":
+        return this.generateForStatement(stmt);
       default:
         return this.unreachable(stmt);
     }
@@ -101,6 +104,55 @@ export class CodeGenerator {
     const lines: string[] = [];
     const condition = this.generateExpression(node.condition);
     lines.push(`${this.indent()}while (${condition}) {`);
+
+    this.indentLevel++;
+    node.body.forEach((stmt) => {
+      lines.push(this.generateStatement(stmt));
+    });
+    this.indentLevel--;
+
+    lines.push(`${this.indent()}}`);
+    return lines.join("\n");
+  }
+
+  private generateForStatement(node: ForStatement): string {
+    const lines: string[] = [];
+    const variable = node.variable.name;
+
+    // Check if we are iterating over a range() call
+    if (
+      node.iterable.type === "CallExpression" &&
+      node.iterable.callee.name === "range"
+    ) {
+      const args = node.iterable.args;
+      let start = "0";
+      let end = "0";
+      let step = "1";
+
+      if (args.length === 1) {
+        end = this.generateExpression(args[0]);
+      } else if (args.length === 2) {
+        start = this.generateExpression(args[0]);
+        end = this.generateExpression(args[1]);
+      } else if (args.length === 3) {
+        start = this.generateExpression(args[0]);
+        end = this.generateExpression(args[1]);
+        step = this.generateExpression(args[2]);
+      }
+
+      // Use 'let' for loop variable as it is block scoped in JS loops usually,
+      // but to match Python scoping we might want 'var'.
+      // However, for loop variables in JS are special.
+      // If we use 'var', it leaks. If we use 'let', it's per iteration.
+      // Python loop variables leak. So 'var' is more accurate to Python.
+      lines.push(
+        `${this.indent()}for (var ${variable} = ${start}; ${variable} < ${end}; ${variable} += ${step}) {`,
+      );
+    } else {
+      // Generic iterable (not fully supported yet as we don't have lists)
+      const iterable = this.generateExpression(node.iterable);
+      lines.push(`${this.indent()}for (var ${variable} of ${iterable}) {`);
+    }
 
     this.indentLevel++;
     node.body.forEach((stmt) => {

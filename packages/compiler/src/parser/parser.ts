@@ -9,6 +9,7 @@ import {
   ElifClause,
   ElseClause,
   WhileStatement,
+  ForStatement,
 } from "./ast";
 import { Token, TokenType } from "../lexer/token";
 
@@ -317,6 +318,10 @@ export class Parser {
       return this.parseWhileStatement();
     }
 
+    if (token.type === TokenType.FOR) {
+      return this.parseForStatement();
+    }
+
     // Identifier-based statements
     if (token.type === TokenType.IDENTIFIER) {
       // Check for registered statement keywords (like 'print')
@@ -469,6 +474,24 @@ export class Parser {
     return {
       type: "WhileStatement",
       condition,
+      body,
+    };
+  }
+
+  private parseForStatement(): ForStatement {
+    this.eat(TokenType.FOR);
+    const variable = this.eat(TokenType.IDENTIFIER);
+    this.eat(TokenType.IN);
+    const iterable = this.parseExpression(Precedence.LOWEST);
+    this.eat(TokenType.COLON);
+    this.skipTrivia();
+
+    const body = this.parseBlock();
+
+    return {
+      type: "ForStatement",
+      variable: { type: "Identifier", name: variable.value },
+      iterable,
       body,
     };
   }

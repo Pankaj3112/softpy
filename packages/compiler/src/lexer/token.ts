@@ -38,6 +38,8 @@ export enum TokenType {
   ELIF = "ELIF",
 
   WHILE = "WHILE",
+  FOR = "FOR",
+  IN = "IN",
 
   // Punctuation / delimiters
   LPAREN = "LPAREN",

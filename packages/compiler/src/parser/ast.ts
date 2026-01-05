@@ -50,7 +50,15 @@ export type Statement =
   | Assignment
   | ExpressionStatement
   | IfStatement
-  | WhileStatement;
+  | WhileStatement
+  | ForStatement;
+
+export interface ForStatement {
+  type: "ForStatement";
+  variable: Identifier;
+  iterable: Expression;
+  body: Statement[];
+}
 
 export interface WhileStatement {
   type: "WhileStatement";
