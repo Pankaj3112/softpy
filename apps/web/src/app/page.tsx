@@ -3,11 +3,50 @@ import { useState } from "react";
 import { compile } from "@softpy/compiler";
 import SoftPyEditor from "../components/SoftPyEditor";
 
+const EXAMPLES: Record<string, string> = {
+  "Hello World": `print("Hello World")`,
+  Variables: `x = 10
+y = 20
+print(x + y)`,
+  "If/Else": `x = 10
+if x > 5:
+    print("x is greater than 5")
+else:
+    print("x is small")`,
+  "While Loop": `i = 0
+while i < 5:
+    print(i)
+    i = i + 1`,
+  "For Loop": `for i in range(5):
+    print(i)`,
+  Functions: `func add(a, b):
+    return a + b
+
+print(add(5, 10))`,
+  Fibonacci: `func fib(n):
+    if n <= 1:
+        return n
+    return fib(n - 1) + fib(n - 2)
+
+print(fib(10))`,
+};
+
 export default function Home() {
-  const [input, setInput] = useState("x = 10\nprint(x)");
+  const [input, setInput] = useState(EXAMPLES["Hello World"]);
   const [output, setOutput] = useState("");
   const [runOutput, setRunOutput] = useState("");
   const [error, setError] = useState("");
+
+  const handleExampleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const key = e.target.value;
+    if (EXAMPLES[key]) {
+      setInput(EXAMPLES[key]);
+      // Clear outputs when switching examples
+      setOutput("");
+      setRunOutput("");
+      setError("");
+    }
+  };
 
   const handleCompile = () => {
     try {
@@ -51,7 +90,20 @@ export default function Home() {
 
   return (
     <div className="p-10 min-h-screen bg-white dark:bg-black text-black dark:text-white">
-      <h1 className="text-2xl font-bold mb-4">SoftPy Compiler Playground</h1>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">SoftPy Compiler Playground</h1>
+        <select
+          className="border p-2 rounded bg-gray-50 dark:bg-gray-900 border-gray-300 dark:border-gray-700"
+          onChange={handleExampleChange}
+          defaultValue="Hello World"
+        >
+          {Object.keys(EXAMPLES).map((key) => (
+            <option key={key} value={key}>
+              {key}
+            </option>
+          ))}
+        </select>
+      </div>
       <div className="flex flex-col md:flex-row gap-4">
         <div className="w-full md:w-1/2">
           <label className="block mb-2 font-semibold">Input (SoftPy)</label>
