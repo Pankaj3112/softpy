@@ -164,8 +164,14 @@ export class CodeGenerator {
   private generateUnaryExpression(node: UnaryExpression): string {
     const argument = this.generateExpression(node.argument);
     switch (node.operator) {
-      case "NOT":
+      case "not":
         return `!${argument}`;
+      case "-":
+        return `-${argument}`;
+      case "+":
+        return `+${argument}`;
+      case "~":
+        return `~${argument}`;
       default:
         throw new Error(`Unsupported unary operator: ${node.operator}`);
     }

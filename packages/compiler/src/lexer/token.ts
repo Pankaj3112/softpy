@@ -18,6 +18,7 @@ export enum TokenType {
   STAR = "STAR",
   SLASH = "SLASH",
   MOD = "MOD",
+  BITWISE_NOT = "BITWISE_NOT", // ~
   ASSIGN = "ASSIGN", // =
   EQUAL = "EQUAL", // ==
   NOT_EQUAL = "NOT_EQUAL", // !=

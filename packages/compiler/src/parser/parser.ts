@@ -174,6 +174,12 @@ export class Parser {
 
     // Unary operators
     this.registerPrefix(TokenType.NOT, new UnaryParselet(Precedence.UNARY));
+    this.registerPrefix(TokenType.PLUS, new UnaryParselet(Precedence.UNARY));
+    this.registerPrefix(TokenType.MINUS, new UnaryParselet(Precedence.UNARY));
+    this.registerPrefix(
+      TokenType.BITWISE_NOT,
+      new UnaryParselet(Precedence.UNARY),
+    );
 
     // Logical operators
     this.registerInfix(TokenType.OR, new BinaryOpParselet(Precedence.OR));

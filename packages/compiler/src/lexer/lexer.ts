@@ -168,7 +168,7 @@ export class Lexer {
   }
 
   private isOperatorChar(char: string): boolean {
-    return /[=+\-*/(),%<>!:]/.test(char);
+    return /[=+\-*/(),%<>!:~]/.test(char);
   }
 
   private skipWhitespace() {
@@ -333,6 +333,8 @@ export class Lexer {
         return this.createToken(TokenType.GT, ">", startCol);
       case ":":
         return this.createToken(TokenType.COLON, ":", startCol);
+      case "~":
+        return this.createToken(TokenType.BITWISE_NOT, "~", startCol);
     }
 
     throw new Error(
