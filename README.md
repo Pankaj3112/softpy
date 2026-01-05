@@ -1,30 +1,210 @@
-# SoftPy
-Toy language with python like syntax that compiles into JS.
+# Softpy Compiler
 
-## Todo
+Softpy is a Python-inspired language that compiles to JavaScript.
 
-1.  **Phase 1: Project Setup & CLI Skeleton**
-    *   Create the folder structure (`src/lexer`, `src/parser`, `src/codegen`, `src/cli`).
-    *   Create a basic CLI entry point that accepts a file path.
-2.  **Phase 2: Lexer - Basic Tokenization**
-    *   Define `TokenType` enum and `Token` interface.
-    *   Implement regex-based matching for `NUMBER`, `STRING`, `IDENTIFIER`, `OPERATOR`.
-3.  **Phase 2: Lexer - Indentation Handling**
-    *   Implement the logic to track indentation levels.
-    *   Emit `INDENT` and `DEDENT` tokens.
-4.  **Phase 3: Parser - AST Definitions**
-    *   Define TypeScript interfaces for AST nodes (`Program`, `Assignment`, `FunctionDef`, etc.).
-5.  **Phase 3: Parser - Statements & Expressions**
-    *   Implement parsing for variable assignments (`x = 10`).
-    *   Implement parsing for `print` statements.
-    *   Implement parsing for binary expressions (`a + b`).
-6.  **Phase 3: Parser - Control Flow & Functions**
-    *   Implement parsing for `if/else` blocks.
-    *   Implement parsing for `while` loops.
-    *   Implement parsing for `func` definitions.
-7.  **Phase 4: Code Generator**
-    *   Create a visitor or recursive function to traverse the AST.
-    *   Generate valid JavaScript string output.
-8.  **Phase 5: Integration & Run Command**
-    *   Wire up `CLI -> Lexer -> Parser -> CodeGen`.
-    *   Implement `softpy run` to execute the generated JS using Node.js.
+## Installation
+
+You can install Softpy globally:
+
+```bash
+npm install -g @softpy/compiler
+```
+
+Or use it locally in a project:
+
+```bash
+npm install @softpy/compiler
+npx softpy example.spy
+```
+
+---
+
+## Usage
+
+Create a `.spy` file with your code. For example, `example.spy`:
+
+```spy
+# Variables and arithmetic
+x = 10
+y = 5
+z = x + y * 2
+
+# Boolean logic
+isValid = True and not False
+hasValue = True or False
+
+# Print statement (comma-separated)
+print "Result:", z
+print x, "+", y, "=", z
+
+# Function calls
+print(x, y, z)
+```
+
+Run it with:
+
+```bash
+softpy example.spy
+```
+
+---
+
+## Language Features
+
+### Data Types
+
+- **Numbers**: `42`, `123`
+- **Strings**: `"Hello, World!"`
+- **Booleans**: `True`, `False`
+
+### Variables
+
+```spy
+name = "Softpy"
+version = 1
+isActive = True
+```
+
+### Operators
+
+**Arithmetic Operators:**
+
+- Addition: `+`
+- Subtraction: `-`
+- Multiplication: `*`
+- Division: `/`
+- Modulo: `%`
+
+```spy
+result = 10 + 5 * 2  # Respects operator precedence
+```
+
+**Logical Operators:**
+
+- AND: `and`
+- OR: `or`
+- NOT: `not`
+
+```spy
+x = True and False
+y = not x or True
+```
+
+### Expressions
+
+- **Parenthesized expressions** for grouping: `(x + y) * z`
+- **Operator precedence**: Follows standard mathematical rules
+- **Unary expressions**: `not isValid`
+
+### Statements
+
+**Print Statement:**
+
+```spy
+# Comma-separated values
+print x, y, z
+
+# Note: print(x, y) syntax not yet supported
+```
+
+**Function Calls:**
+
+```spy
+# Generic function call syntax
+myFunc(arg1, arg2)
+```
+
+### Control Flow
+
+**If/Else Statements:**
+
+```spy
+if x > 10:
+  print("Large")
+elif x > 5:
+  print("Medium")
+else:
+  print("Small")
+```
+
+**While Loops:**
+
+```spy
+while x > 0:
+  print(x)
+  x = x - 1
+```
+
+**For Loops:**
+
+```spy
+# Range loop
+for i in range(10):
+  print(i)
+
+# Range with start, stop, step
+for i in range(0, 20, 2):
+  print(i)
+```
+
+### Functions
+
+**Function Definition:**
+
+```spy
+func add(a, b):
+  return a + b
+
+result = add(10, 20)
+print(result)
+```
+
+**Recursion:**
+
+```spy
+func factorial(n):
+  if n <= 1:
+    return 1
+  else:
+    return n * factorial(n - 1)
+```
+
+### Comments
+
+```spy
+# This is a single-line comment
+x = 10  # Comments can be inline
+```
+
+---
+
+## Compilation
+
+Softpy compiles to JavaScript:
+
+```spy
+x = True and not False
+print x
+```
+
+Compiles to:
+
+```javascript
+let x = true && !false;
+console.log(x);
+```
+
+---
+
+## Coming Soon
+
+- Lists and dictionaries
+- More built-in functions
+- Classes and Objects
+- Modules and Imports
+
+---
+
+## License
+
+MIT
