@@ -16,7 +16,7 @@ export default function SoftPyEditor({ value, onChange }: SoftPyEditorProps) {
     monacoRef.current = monaco;
 
     // 1. Register the Language
-    if (!monaco.languages.getLanguages().some((l) => l.id === "softpy")) {
+    if (!monaco.languages.getLanguages().some((l: any) => l.id === "softpy")) {
       monaco.languages.register({ id: "softpy" });
     }
 
@@ -36,7 +36,7 @@ export default function SoftPyEditor({ value, onChange }: SoftPyEditorProps) {
 
     // 3. Intellisense (Completion Provider)
     monaco.languages.registerCompletionItemProvider("softpy", {
-      provideCompletionItems: (model, position) => {
+      provideCompletionItems: (model: any, position: any) => {
         const word = model.getWordUntilPosition(position);
         const range = {
           startLineNumber: position.lineNumber,
