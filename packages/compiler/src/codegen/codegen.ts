@@ -137,13 +137,13 @@ export class CodeGenerator {
     const right = this.generateExpression(node.right);
 
     if (node.operator === "and") {
-      return `${left} && ${right}`;
+      return `(${left} && ${right})`;
     }
     if (node.operator === "or") {
-      return `${left} || ${right}`;
+      return `(${left} || ${right})`;
     }
 
-    return `${left} ${node.operator} ${right}`;
+    return `(${left} ${node.operator} ${right})`;
   }
 
   private generateCallExpression(node: CallExpression): string {

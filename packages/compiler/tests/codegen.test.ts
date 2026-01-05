@@ -39,7 +39,7 @@ describe("CodeGenerator", () => {
     const generator = new CodeGenerator();
     const code = generator.generate(ast);
 
-    expect(code).toBe("10 + 20;");
+    expect(code).toBe("(10 + 20);");
   });
 
   test("generates print statement", () => {
