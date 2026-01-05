@@ -34,6 +34,9 @@ print(fib(10))`,
 export default function Home() {
   const [input, setInput] = useState(EXAMPLES["Hello World"]);
   const [output, setOutput] = useState("");
+  const [ast, setAst] = useState<any>(null);
+  const [tokens, setTokens] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<"js" | "ast" | "tokens">("js");
   const [runOutput, setRunOutput] = useState("");
   const [error, setError] = useState("");
 
@@ -43,6 +46,8 @@ export default function Home() {
       setInput(EXAMPLES[key]);
       // Clear outputs when switching examples
       setOutput("");
+      setAst(null);
+      setTokens(null);
       setRunOutput("");
       setError("");
     }
@@ -50,13 +55,17 @@ export default function Home() {
 
   const handleCompile = () => {
     try {
-      const result = compile(input);
+      const result = compile(input, { debug: true });
       setOutput(result.code);
+      setAst(result.ast);
+      setTokens(result.tokens);
       setError("");
       return result.code;
     } catch (e: any) {
       setError(e.message);
       setOutput("");
+      setAst(null);
+      setTokens(null);
       return null;
     }
   };
@@ -113,11 +122,48 @@ export default function Home() {
         </div>
         <div className="w-full md:w-1/2 flex flex-col gap-4">
           <div>
-            <label className="block mb-2 font-semibold">
-              Output (JavaScript)
-            </label>
+            <div className="flex gap-4 mb-2 border-b border-gray-300 dark:border-gray-700">
+              <button
+                onClick={() => setActiveTab("js")}
+                className={`pb-1 font-semibold ${
+                  activeTab === "js"
+                    ? "border-b-2 border-blue-600 text-blue-600"
+                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                }`}
+              >
+                JavaScript
+              </button>
+              <button
+                onClick={() => setActiveTab("ast")}
+                className={`pb-1 font-semibold ${
+                  activeTab === "ast"
+                    ? "border-b-2 border-blue-600 text-blue-600"
+                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                }`}
+              >
+                AST
+              </button>
+              <button
+                onClick={() => setActiveTab("tokens")}
+                className={`pb-1 font-semibold ${
+                  activeTab === "tokens"
+                    ? "border-b-2 border-blue-600 text-blue-600"
+                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                }`}
+              >
+                Tokens
+              </button>
+            </div>
             <div className="w-full h-44 border p-2 bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700 rounded overflow-auto font-mono whitespace-pre-wrap text-sm">
-              {error ? <span className="text-red-500">{error}</span> : output}
+              {error ? (
+                <span className="text-red-500">{error}</span>
+              ) : activeTab === "js" ? (
+                output
+              ) : activeTab === "ast" ? (
+                JSON.stringify(ast, null, 2)
+              ) : (
+                JSON.stringify(tokens, null, 2)
+              )}
             </div>
           </div>
 
