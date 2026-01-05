@@ -16,6 +16,8 @@ import {
   ElseClause,
   WhileStatement,
   ForStatement,
+  FunctionDeclaration,
+  ReturnStatement,
 } from "../parser/ast";
 
 export class CodeGenerator {
@@ -40,6 +42,10 @@ export class CodeGenerator {
         return this.generateWhileStatement(stmt);
       case "ForStatement":
         return this.generateForStatement(stmt);
+      case "FunctionDeclaration":
+        return this.generateFunctionDeclaration(stmt);
+      case "ReturnStatement":
+        return this.generateReturnStatement(stmt);
       default:
         return this.unreachable(stmt);
     }
@@ -130,14 +136,14 @@ export class CodeGenerator {
       let step = "1";
 
       if (args.length === 1) {
-        end = this.generateExpression(args[0]);
+        end = this.generateExpression(args[0]!);
       } else if (args.length === 2) {
-        start = this.generateExpression(args[0]);
-        end = this.generateExpression(args[1]);
+        start = this.generateExpression(args[0]!);
+        end = this.generateExpression(args[1]!);
       } else if (args.length === 3) {
-        start = this.generateExpression(args[0]);
-        end = this.generateExpression(args[1]);
-        step = this.generateExpression(args[2]);
+        start = this.generateExpression(args[0]!);
+        end = this.generateExpression(args[1]!);
+        step = this.generateExpression(args[2]!);
       }
 
       // Use 'let' for loop variable as it is block scoped in JS loops usually,
@@ -162,6 +168,28 @@ export class CodeGenerator {
 
     lines.push(`${this.indent()}}`);
     return lines.join("\n");
+  }
+
+  private generateFunctionDeclaration(node: FunctionDeclaration): string {
+    const lines: string[] = [];
+    const params = node.params.map((p) => p.name).join(", ");
+    lines.push(`${this.indent()}function ${node.name.name}(${params}) {`);
+
+    this.indentLevel++;
+    node.body.forEach((stmt) => {
+      lines.push(this.generateStatement(stmt));
+    });
+    this.indentLevel--;
+
+    lines.push(`${this.indent()}}`);
+    return lines.join("\n");
+  }
+
+  private generateReturnStatement(node: ReturnStatement): string {
+    if (node.argument) {
+      return `${this.indent()}return ${this.generateExpression(node.argument)};`;
+    }
+    return `${this.indent()}return;`;
   }
 
   // ------------------ Expression Generation ------------------

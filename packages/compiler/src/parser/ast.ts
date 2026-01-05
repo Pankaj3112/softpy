@@ -51,7 +51,21 @@ export type Statement =
   | ExpressionStatement
   | IfStatement
   | WhileStatement
-  | ForStatement;
+  | ForStatement
+  | FunctionDeclaration
+  | ReturnStatement;
+
+export interface FunctionDeclaration {
+  type: "FunctionDeclaration";
+  name: Identifier;
+  params: Identifier[];
+  body: Statement[];
+}
+
+export interface ReturnStatement {
+  type: "ReturnStatement";
+  argument?: Expression;
+}
 
 export interface ForStatement {
   type: "ForStatement";

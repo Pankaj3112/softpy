@@ -40,6 +40,8 @@ export enum TokenType {
   WHILE = "WHILE",
   FOR = "FOR",
   IN = "IN",
+  FUNC = "FUNC",
+  RETURN = "RETURN",
 
   // Punctuation / delimiters
   LPAREN = "LPAREN",

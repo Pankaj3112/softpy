@@ -20,6 +20,8 @@ export class Lexer {
     while: TokenType.WHILE,
     for: TokenType.FOR,
     in: TokenType.IN,
+    func: TokenType.FUNC,
+    return: TokenType.RETURN,
   };
 
   constructor(input: string) {

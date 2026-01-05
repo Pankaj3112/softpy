@@ -10,6 +10,8 @@ import {
   ElseClause,
   WhileStatement,
   ForStatement,
+  FunctionDeclaration,
+  ReturnStatement,
 } from "./ast";
 import { Token, TokenType } from "../lexer/token";
 
@@ -322,6 +324,14 @@ export class Parser {
       return this.parseForStatement();
     }
 
+    if (token.type === TokenType.FUNC) {
+      return this.parseFunctionDeclaration();
+    }
+
+    if (token.type === TokenType.RETURN) {
+      return this.parseReturnStatement();
+    }
+
     // Identifier-based statements
     if (token.type === TokenType.IDENTIFIER) {
       // Check for registered statement keywords (like 'print')
@@ -493,6 +503,58 @@ export class Parser {
       variable: { type: "Identifier", name: variable.value },
       iterable,
       body,
+    };
+  }
+
+  private parseFunctionDeclaration(): FunctionDeclaration {
+    this.eat(TokenType.FUNC);
+    const name = this.eat(TokenType.IDENTIFIER);
+    this.eat(TokenType.LPAREN);
+
+    const params: Identifier[] = [];
+    if (!this.match(TokenType.RPAREN)) {
+      do {
+        if (this.match(TokenType.COMMA)) {
+          this.eat(TokenType.COMMA);
+        }
+        const param = this.eat(TokenType.IDENTIFIER);
+        params.push({ type: "Identifier", name: param.value });
+      } while (this.match(TokenType.COMMA));
+    }
+
+    this.eat(TokenType.RPAREN);
+    this.eat(TokenType.COLON);
+    this.skipTrivia();
+
+    const body = this.parseBlock();
+
+    return {
+      type: "FunctionDeclaration",
+      name: { type: "Identifier", name: name.value },
+      params,
+      body,
+    };
+  }
+
+  private parseReturnStatement(): ReturnStatement {
+    this.eat(TokenType.RETURN);
+    let argument: Expression | undefined;
+
+    if (!this.match(TokenType.NEWLINE) && !this.isAtEnd()) {
+      argument = this.parseExpression(Precedence.LOWEST);
+    }
+
+    this.skipTrivia();
+
+    if (argument) {
+      return {
+        type: "ReturnStatement",
+        argument,
+      };
+    }
+
+    return {
+      type: "ReturnStatement",
     };
   }
 
